@@ -22,7 +22,7 @@ The standard method that your game must implement is this:
 public query func metascoreDump () : async [(player : {#stoic : Text; #plug : Text}, score : Nat)] { ... };
 ```
 
-This method should simply read whatever internal state you're using to store player scores and return that.
+This method should simply read whatever internal state you're using to store player scores and return that. **Edit: Only one score per player should be returned, and that should be their highest score achieved in the game.**
 
 This it! The only code you need to implement is 1) stoic or plug integration, 2) `metascoreDump`.
 
