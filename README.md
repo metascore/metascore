@@ -22,7 +22,7 @@ You should participate in Metascore, because gamers will be trying their hardest
 - Earn cronics NFTs, starverse NFTs, and more!
 - Be aware, it is not a requirement for all games to integrate metascore, so not all games will grant you progress toward your score. We will post a directory of Metascore enabled games for you to reference during the hackathon.
 - The meta leaderboards will update frequently, so keep your eye on them while you jockey for position on your quest to be the best!
-- In order to discourage cheaters, 
+- In order to discourage cheaters, we will require accounts to be verified by phone number or social account.
 
 ## Under The Hood
 

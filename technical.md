@@ -60,6 +60,8 @@ Generating a wallet address with Plug or Stoic is possibly even easier than gene
 - Link a social account to verify
 - Add a phone number to verify
 
+Manually validating social seems like the type of thing maybe we could farm out to the community as well.
+
 I hate Sybil.
 
 ## Sybil (Developers)
