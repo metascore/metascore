@@ -70,6 +70,8 @@ I anticipate there being a manageable number of game canisters for **manual vali
 
 Not all games will be open source. We will validate manually by going to the game canister, playing it, and making sure it's a game. This feels like a good job to farm out to a couple of community members in exchange for an NFT.
 
+We should also encourage the community to report anything fishy (ex: a game score that seems impossible.)
+
 # Requirements
 
 TODO: think more about requirements
