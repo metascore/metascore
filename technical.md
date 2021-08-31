@@ -35,7 +35,7 @@ Rank badges are intended to be **non-transferable** status symbols that players 
 
 That said, the people want airdrops! So, as well as the Rank Badges, we will provide transferable NFT rewards (that still increase in value based on metascore.) My hope is that we can find an NFT partner to work with. If not, we can take our time after the hackathon to develop an NFT project.
 
-# Score Update Intervals
+## Score Update Intervals
 
 Watching your score change as you play and jockying for position on the leaderboards in realtime could be a highlight for hackathon participants. To that end, the scoreboard should update frequently.
 
@@ -43,7 +43,7 @@ Norton demoed his new NFT project that's apparently using the undocumented canis
 
 The community `metadeckDump` methods should be considered completely unoptimized and potentially expensive. Realtime polling is likely unrealistic for that reason. I imagine a polling rate of every minute or couple of minutes while the hackathon is ongoing will be manageable and have the desired effect.
 
-# Eligable Scoring Period
+## Eligable Scoring Period
 
 At a certain fixed point in time, the Metascore Can will cease polling Game Cans and all scores will be considered final. There should be a grace period after the drop before ranks a granted. This will allow time for players to validate their accounts, and for us to verify results and make sure that all canisters have had a chance to make a positive final report.
 
