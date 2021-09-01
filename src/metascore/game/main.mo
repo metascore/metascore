@@ -7,7 +7,7 @@ import G "Game";
 import MS "../MetaScore";
 
 shared ({caller = owner}) actor class Game() : async G.Interface {
-    public query func scores() : async [(Text, Nat)] {
+    public query func metascoreScores() : async [(Text, Nat)] {
         Debug.print("Returning scores...");
         [
             ("player0001", 10),
@@ -16,7 +16,7 @@ shared ({caller = owner}) actor class Game() : async G.Interface {
         ];
     };
 
-    public shared func registerSelf(c : MS.RegisterCallback) : async () {
+    public shared func metascoreRegisterSelf(c : MS.RegisterCallback) : async () {
         await c("Saga Tarot");
     };
 };

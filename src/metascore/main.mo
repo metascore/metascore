@@ -25,7 +25,7 @@ shared ({caller}) actor class MetaScore() : async MS.Interface {
         id : Principal,
     ) : async Result.Result<(), Text> {    
         let game : G.Interface = actor(Principal.toText(id));
-        await game.registerSelf(registerGame);
+        await game.metascoreRegisterSelf(registerGame);
         #ok();
     };
 
@@ -35,7 +35,7 @@ shared ({caller}) actor class MetaScore() : async MS.Interface {
         let pID = Principal.toText(caller);
         Debug.print("Registering " # name # " (" # pID # ")...");
         let game : G.Interface = actor(pID);
-        ignore await game.scores();
+        ignore await game.metascoreScores();
         gameCanisters.put(name, caller);
     };
 
@@ -55,7 +55,7 @@ shared ({caller}) actor class MetaScore() : async MS.Interface {
         Debug.print("Getting scores...");
         for ((_, p) in gameCanisters.entries()) {
             let game : G.Interface = actor(Principal.toText(p));
-            let scores = await game.scores();
+            let scores = await game.metascoreScores();
 
             // Do something with it.
             let _ = scores;
