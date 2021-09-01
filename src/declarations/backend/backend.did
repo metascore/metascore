@@ -1,0 +1,41 @@
+type Score = nat;
+type RegistrationResponse = 
+ variant {
+   err: variant {
+          invalidresponse: record {};
+          notfound: record {};
+        };
+   ok: text;
+ };
+type Player = 
+ variant {
+   plug: text;
+   stoic: text;
+ };
+type Percentile = float64;
+type Metascore = 
+ service {
+   canister_heartbeat: () -> ();
+   getGameCans: () -> (vec GameCanRecord) query;
+   getPlayerMetascores: () ->
+    (vec record {
+           Player;
+           GameCanRecord;
+           Score;
+         }) query;
+   getPlayerPercentiles: () ->
+    (vec record {
+           Player;
+           GameCanRecord;
+           Percentile;
+         }) query;
+   getPlayerScores: () -> (vec record {
+                                 Player;
+                                 GameCanRecord;
+                                 Score;
+                               }) query;
+   queryAllGameCans: () -> ();
+   registerGameCan: (GameCanRecord) -> (RegistrationResponse);
+ };
+type GameCanRecord = principal;
+service : () -> Metascore

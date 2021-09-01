@@ -1,0 +1,14 @@
+# Mac
+.DS_Store
+
+# IC
+.dfx
+.vessel
+
+# Node
+node_modules
+package-lock.json
+
+# IDE
+
+# Shell

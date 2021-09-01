@@ -1,0 +1,14 @@
+type ScoreDump = 
+ vec record {
+       Player;
+       Score;
+     };
+type Score = nat;
+type Player = 
+ variant {
+   plug: text;
+   stoic: text;
+ };
+service : {
+  metascoreDump: () -> (ScoreDump);
+}

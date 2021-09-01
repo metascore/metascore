@@ -29,3 +29,17 @@ You should participate in Metascore, because gamers will be trying their hardest
 I've started sketching out ideas [here](./docs/technical.md).
 
 **PRs welcome!, tweet me at @jorgenbuilder or catch me in the discord if you have questions.** 
+
+### Running the PoC
+
+```shell
+npm i
+dfx start &
+dfx deploy
+dfx canister call backend registerGameCan "(principal \"$(dfx canister id gamecan)\")"
+dfx canister call backend getGameCans
+dfx canister call backend queryAllGameCans
+dfx canister call backend getPlayerScores
+```
+
+If you open the frontend can in the browser and leave it open you will effectively be running the scoring loop on a 1 minute cron.
