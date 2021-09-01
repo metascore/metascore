@@ -8,7 +8,7 @@ Earn NFTs and loot by playing hackathon games!
 
 ## Participating as a Developer
 
-You should participate in Metascore, because gamers will be trying their hardest to get high scores on all the integrated games. [Developer readme](./developers.md).
+You should participate in Metascore, because gamers will be trying their hardest to get high scores on all the integrated games. [Developer readme](./docs/developers.md).
 
 ## Participating as a Gamer
 
@@ -26,6 +26,6 @@ You should participate in Metascore, because gamers will be trying their hardest
 
 ## Under The Hood
 
-I've started sketching out ideas [here](./technical.md).
+I've started sketching out ideas [here](./docs/technical.md).
 
 **PRs welcome!, tweet me at @jorgenbuilder or catch me in the discord if you have questions.** 
