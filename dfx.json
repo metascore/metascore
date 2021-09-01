@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "dfx": "0.8.0",
+  "canisters": {
+    "metascore": {
+      "type": "motoko",
+      "main": "src/metascore/main.mo"
+    },
+    "game": {
+      "type": "motoko",
+      "main": "src/metascore/game/main.mo"
+    }
+  }
+}
