@@ -1,4 +1,7 @@
 import Array "mo:base/Array";
+import BiMap "mo:bimap/BiMap";
+import BiHashMap "mo:bimap/BiHashMap";
+import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
 import Nat "mo:base/Nat";
 import Order "mo:base/Order";
@@ -24,8 +27,9 @@ shared ({caller = owner}) actor class MetaScore() : async MS.Interface {
     );
 
     private type Record = {
-        name   : Text;
-        scores : MS.Scores;
+        name          : Text;
+        rawScores     : MS.Scores;
+        playerRanking : BiMap.BiMap<Principal, Nat>;
     };
 
     public func register(
@@ -39,13 +43,12 @@ shared ({caller = owner}) actor class MetaScore() : async MS.Interface {
     public shared ({caller}) func registerGame(
         name : Text,
     ) : async () {
-        let pID = Principal.toText(caller);
-        Debug.print("Registering " # name # " (" # pID # ")...");
-        let game : G.Interface = actor(pID);
-        ignore await game.metascoreScores();
+        Debug.print("Registering " # name # " (" # Principal.toText(caller) # ")...");
+        let scores = await getScores(caller);
         gameCanisters.put(caller, {
-            name   = name;
-            scores = [];
+            name          = name;
+            rawScores     = scores;
+            playerRanking = scoresToRanking(scores);
         });
     };
 
@@ -66,20 +69,71 @@ shared ({caller = owner}) actor class MetaScore() : async MS.Interface {
     private func queryAllScores() : async () {
         Debug.print("Getting scores...");
         for ((p, g) in gameCanisters.entries()) {
-            let game : G.Interface = actor(Principal.toText(p));
-            let scores = await game.metascoreScores();
-            
+            let scores = await getScores(p);
+            gameCanisters.put(p, {
+                name          = g.name;
+                rawScores     = scores;
+                playerRanking = scoresToRanking(scores);
+            });
+        };
+    };
+
+    private func getScores(id : Principal) : async MS.Scores {
+        let game : G.Interface = actor(Principal.toText(id));
+        Array.sort(
+            await game.metascoreScores(),
             // Sort from high to low.
-            let sorted = Array.sort(scores, func (a : MS.Score, b : MS.Score) : Order.Order {
+            func (a : MS.Score, b : MS.Score) : Order.Order {
                 let (x, y) = (a.1, b.1);
                 if      (x < y)  { #greater; }
                 else if (x == y) { #equal;   }
                 else             { #less;    };
-            });
-            gameCanisters.put(p, {
-                name   = g.name;
-                scores = sorted;
-            });
+            },
+        );
+    };
+
+    public func getRanking(
+        game : Principal,
+        id   : Principal,
+    ) : async ?Nat {
+        switch (gameCanisters.get(game)) {
+            case (null) { null; };
+            case (? gc) {
+                switch (gc.playerRanking.getByLeft(id)) {
+                    case (null) { null;    };
+                    case (? s)  { ?(s + 1) };
+                };
+            };
         };
+    };
+
+    public func getOverallRanking(
+        game : Principal,
+    ) : async [Principal] {
+        switch (gameCanisters.get(game)) {
+            case (null) { return []; };
+            case (? gc) {
+                Array.tabulate<Principal>(
+                    gc.rawScores.size(),
+                    func (i : Nat) : Principal { 
+                        let (p, _) = gc.rawScores[i];
+                        p;
+                    },
+                );
+            };
+        };
+    };
+
+    private func scoresToRanking(scores : MS.Scores) : BiMap.BiMap<Principal, Nat> {
+        let m = BiMap.New<Principal, Nat>(
+            BiHashMap.empty<Principal, Nat>(0, Principal.equal, Principal.hash),
+            BiHashMap.empty<Nat, Principal>(0, Nat.equal, Hash.hash,),
+            Nat.equal,
+        );
+        for (i in scores.keys()) {
+            let (p, _) = scores[i];
+            ignore m.replace(p, i);
+        };
+        m;
     };
 };
