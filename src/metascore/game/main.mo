@@ -7,12 +7,11 @@ import G "Game";
 import MS "../MetaScore";
 
 shared ({caller = owner}) actor class Game() : async G.Interface {
-    public query func metascoreScores() : async [(Text, Nat)] {
+    public query func metascoreScores() : async MS.Scores {
         Debug.print("Returning scores...");
         [
-            ("player0001", 10),
-            ("player0002", 8),
-            ("player0003", 2),
+            (Principal.fromText("2ibo7-dia"), 10),
+            (Principal.fromText("uuc56-gyb"), 8),
         ];
     };
 

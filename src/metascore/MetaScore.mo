@@ -2,6 +2,12 @@ import Principal "mo:base/Result";
 import Result "mo:base/Result";
 
 module {
+    public type Score = (
+        Principal, // Principal of the player.
+        Nat,       // Score of the player.
+    );
+    public type Scores = [Score];
+
     // Callback on which new games should register
     public type RegisterCallback = shared (
         Text // Name of the game.
