@@ -1,12 +1,16 @@
 import Array "mo:base/Array";
+import AssetStorage "mo:http/AssetStorage";
+import Blob "mo:base/Blob";
 import Float "mo:base/Float";
 import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
+import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
 import Order "mo:base/Order";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import Time "mo:base/Time";
+import Text "mo:base/Text";
 
 import Debug "mo:base/Debug";
 
@@ -149,5 +153,28 @@ shared ({caller = owner}) actor class MetaScore() : async MS.Interface {
             m.put(p, i + 1);
         };
         m;
+    };
+
+    public query func http_request(
+        r : AssetStorage.HttpRequest,
+    ) : async AssetStorage.HttpResponse {
+        var text = "<h1>Hello world!</h1>";
+        for ((p, r) in gameCanisters.entries()) {
+            text #= "<div>";
+            text #= "<h2>" # r.name # " (" # Principal.toText(p) # ")</h2>";
+            text #= "<h3>Top 3</h3>";
+            text #= "<ol>";
+            for (i in Iter.range(0, Nat.min(2, r.rawScores.size() - 1))) {
+                text #= "<li>" # Principal.toText(r.rawScores[i].0) # "</li>";
+            };
+            text #= "</ol>";
+            text #= "</div>";
+        };
+        {
+            body               = Blob.toArray(Text.encodeUtf8(text));
+            headers            = [("Content-Type", "text/html; charset=UTF-8")];
+            streaming_strategy = null;
+            status_code        = 200;
+        };
     };
 };
