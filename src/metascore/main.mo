@@ -16,6 +16,7 @@ import Debug "mo:base/Debug";
 
 import G "game/Game";
 import MS "Metascore";
+import Player "Player";
 
 shared ({caller = owner}) actor class Metascore() : async MS.Interface {
 
@@ -32,7 +33,7 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
     private type Record = {
         name          : Text;
         rawScores     : MS.Scores;
-        playerRanking : HashMap.HashMap<MS.Player, Nat>;
+        playerRanking : HashMap.HashMap<Player.Player, Nat>;
     };
 
     public func register(
@@ -97,7 +98,7 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
 
     public func getPercentile(
         game    : Principal,
-        player  : MS.Player,
+        player  : Player.Player,
     ) : async ?Float {
         switch (gameCanisters.get(game)) {
             case (null) { null; };
@@ -115,7 +116,7 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
 
     public func getRanking(
         game    : Principal,
-        player  : MS.Player,
+        player  : Player.Player,
     ) : async ?Nat {
         switch (gameCanisters.get(game)) {
             case (null) { null; };
@@ -130,13 +131,13 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
 
     public func getOverallRanking(
         game : Principal,
-    ) : async [MS.Player] {
+    ) : async [Player.Player] {
         switch (gameCanisters.get(game)) {
             case (null) { return []; };
             case (? gc) {
-                Array.tabulate<MS.Player>(
+                Array.tabulate<Player.Player>(
                     gc.rawScores.size(),
-                    func (i : Nat) : MS.Player { 
+                    func (i : Nat) : Player.Player { 
                         let (p, _) = gc.rawScores[i];
                         p;
                     },
@@ -146,8 +147,8 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
     };
 
     // Assumes that the incoming scores are sorted (high to low).
-    private func scoresToRanking(scores : MS.Scores) : HashMap.HashMap<MS.Player, Nat> {
-        let m = HashMap.HashMap<MS.Player, Nat>(scores.size(), MS.playerEqual, MS.playerHash);
+    private func scoresToRanking(scores : MS.Scores) : HashMap.HashMap<Player.Player, Nat> {
+        let m = HashMap.HashMap<Player.Player, Nat>(scores.size(), Player.equal, Player.hash);
         for (i in scores.keys()) {
             let (p, _) = scores[i];
             m.put(p, i + 1);
@@ -165,7 +166,7 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
             text #= "<h3>Top 3</h3>";
             text #= "<ol>";
             for (i in Iter.range(0, Nat.min(2, r.rawScores.size() - 1))) {
-                text #= "<li>" # MS.playerToText(r.rawScores[i].0) # "</li>";
+                text #= "<li>" # Player.toText(r.rawScores[i].0) # "</li>";
             };
             text #= "</ol>";
             text #= "</div>";
