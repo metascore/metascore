@@ -1,4 +1,4 @@
-import MS "../MetaScore";
+import MS "../Metascore";
 
 module {
     public type Interface = actor {

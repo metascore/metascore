@@ -1,9 +1,14 @@
-import Principal "mo:base/Result";
+import Hash "mo:base/Hash";
+import Principal "mo:base/Principal";
 import Result "mo:base/Result";
+import Text "mo:base/Text";
+
+import Player "Player";
 
 module {
+
     public type Score = (
-        Principal, // Principal of the player.
+        Player.Player,    // Wallet address of the player.
         Nat,       // Score of the player.
     );
     public type Scores = [Score];
