@@ -15,9 +15,9 @@ import Text "mo:base/Text";
 import Debug "mo:base/Debug";
 
 import G "game/Game";
-import MS "MetaScore";
+import MS "Metascore";
 
-shared ({caller = owner}) actor class MetaScore() : async MS.Interface {
+shared ({caller = owner}) actor class Metascore() : async MS.Interface {
 
     // DISCLAIMER:
     // Ignoring stable variables for now.

@@ -4,7 +4,7 @@ import Result "mo:base/Result";
 import Debug "mo:base/Debug";
 
 import G "Game";
-import MS "../MetaScore";
+import MS "../Metascore";
 
 shared ({caller = owner}) actor class Game() : async G.Interface {
     public query func metascoreScores() : async MS.Scores {
