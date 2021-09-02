@@ -1,6 +1,4 @@
 import Array "mo:base/Array";
-import BiMap "mo:bimap/BiMap";
-import BiHashMap "mo:bimap/BiHashMap";
 import Float "mo:base/Float";
 import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
@@ -30,7 +28,7 @@ shared ({caller = owner}) actor class MetaScore() : async MS.Interface {
     private type Record = {
         name          : Text;
         rawScores     : MS.Scores;
-        playerRanking : BiMap.BiMap<Principal, Nat>;
+        playerRanking : HashMap.HashMap<Principal, Nat>;
     };
 
     public func register(
@@ -100,11 +98,11 @@ shared ({caller = owner}) actor class MetaScore() : async MS.Interface {
         switch (gameCanisters.get(game)) {
             case (null) { null; };
             case (? gc) {
-                switch (gc.playerRanking.getByLeft(id)) {
+                switch (gc.playerRanking.get(id)) {
                     case (null) { null; };
                     case (? r)  {
                         let n = Float.fromInt(gc.playerRanking.size());
-                        ?((n - Float.fromInt(r)) / n);
+                        ?((n - Float.fromInt(r - 1)) / n);
                     };
                 };
             };
@@ -118,9 +116,9 @@ shared ({caller = owner}) actor class MetaScore() : async MS.Interface {
         switch (gameCanisters.get(game)) {
             case (null) { null; };
             case (? gc) {
-                switch (gc.playerRanking.getByLeft(id)) {
-                    case (null) { null;    };
-                    case (? r)  { ?(r + 1) };
+                switch (gc.playerRanking.get(id)) {
+                    case (null) { null; };
+                    case (? r)  { ?r    };
                 };
             };
         };
@@ -143,15 +141,12 @@ shared ({caller = owner}) actor class MetaScore() : async MS.Interface {
         };
     };
 
-    private func scoresToRanking(scores : MS.Scores) : BiMap.BiMap<Principal, Nat> {
-        let m = BiMap.New<Principal, Nat>(
-            BiHashMap.empty<Principal, Nat>(0, Principal.equal, Principal.hash),
-            BiHashMap.empty<Nat, Principal>(0, Nat.equal, Hash.hash,),
-            Nat.equal,
-        );
+    // Assumes that the incoming scores are sorted (high to low).
+    private func scoresToRanking(scores : MS.Scores) : HashMap.HashMap<Principal, Nat> {
+        let m = HashMap.HashMap<Principal, Nat>(scores.size(), Principal.equal, Principal.hash);
         for (i in scores.keys()) {
             let (p, _) = scores[i];
-            ignore m.replace(p, i);
+            m.put(p, i + 1);
         };
         m;
     };

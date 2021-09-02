@@ -10,10 +10,5 @@
       "type": "motoko",
       "main": "src/metascore/game/main.mo"
     }
-  },
-  "defaults": {
-    "build": {
-      "packtool": "vessel sources"
-    }
   }
 }
