@@ -1,6 +1,7 @@
 import Array "mo:base/Array";
 import BiMap "mo:bimap/BiMap";
 import BiHashMap "mo:bimap/BiHashMap";
+import Float "mo:base/Float";
 import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
 import Nat "mo:base/Nat";
@@ -92,6 +93,24 @@ shared ({caller = owner}) actor class MetaScore() : async MS.Interface {
         );
     };
 
+    public func getPercentile(
+        game : Principal,
+        id   : Principal,
+    ) : async ?Float {
+        switch (gameCanisters.get(game)) {
+            case (null) { null; };
+            case (? gc) {
+                switch (gc.playerRanking.getByLeft(id)) {
+                    case (null) { null; };
+                    case (? r)  {
+                        let n = Float.fromInt(gc.playerRanking.size());
+                        ?((n - Float.fromInt(r)) / n);
+                    };
+                };
+            };
+        };
+    };
+
     public func getRanking(
         game : Principal,
         id   : Principal,
@@ -101,7 +120,7 @@ shared ({caller = owner}) actor class MetaScore() : async MS.Interface {
             case (? gc) {
                 switch (gc.playerRanking.getByLeft(id)) {
                     case (null) { null;    };
-                    case (? s)  { ?(s + 1) };
+                    case (? r)  { ?(r + 1) };
                 };
             };
         };
