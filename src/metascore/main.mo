@@ -38,7 +38,7 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
         playerRanking : HashMap.HashMap<Player.Player, Nat>;
     };
 
-    public func register(
+    public shared func register(
         id : Principal,
     ) : async Result.Result<(), Text> {    
         let game : G.Interface = actor(Principal.toText(id));
@@ -98,10 +98,17 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
         );
     };
 
-    public func getPercentile(
+    public query func getPercentile(
         game    : Principal,
         player  : Player.Player,
     ) : async ?Float {
+        _getPercentile(game, player);
+    };
+
+    private func _getPercentile(
+        game    : Principal,
+        player  : Player.Player,
+    ) : ?Float {
         switch (gameCanisters.get(game)) {
             case (null) { null; };
             case (? gc) {
@@ -116,10 +123,17 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
         };
     };
 
-    public func getRanking(
+    public query func getRanking(
         game    : Principal,
         player  : Player.Player,
     ) : async ?Nat {
+        _getRanking(game, player);
+    };
+
+    private func _getRanking(
+        game    : Principal,
+        player  : Player.Player,
+    ) : ?Nat {
         switch (gameCanisters.get(game)) {
             case (null) { null; };
             case (? gc) {
@@ -131,17 +145,24 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
         };
     };
 
-    public func getGameScoreComponent (
+    public query func getGameScoreComponent (
         game    : Principal,
         player  : Player.Player,
     ) : async ?Nat {
+        _getGameScoreComponent(game, player);
+    };
+
+    private func _getGameScoreComponent (
+        game    : Principal,
+        player  : Player.Player,
+    ) : ?Nat {
         // To drive people to try all games, 1/2 of points awarded for participation.
         var score : Float = 0.5;
         // NOTE: Unpacking options is my second least favourite thing in Motoko.
-        switch (await getPercentile(game, player)) {
+        switch (_getPercentile(game, player)) {
             case (null) return null;
             case (?percentile) {
-                switch (await getRanking(game, player)) {
+                switch (_getRanking(game, player)) {
                     case (null) return null;
                     case (?ranking) {
                         // Players get up to 1/4 of available points based on performance.
@@ -166,10 +187,10 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
         };
     };
 
-    public func getMetascore (player : Player.Player) : async Nat {
+    public query func getMetascore (player : Player.Player) : async Nat {
         var score = 0;
         for ((p, _) in gameCanisters.entries()) {
-            switch (await getGameScoreComponent(p, player)) {
+            switch (_getGameScoreComponent(p, player)) {
                 case (null) ();
                 case (?component) score := score + component;
             };
@@ -177,7 +198,7 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
         score;
     };
 
-    public func getOverallRanking(
+    public query func getOverallRanking(
         game : Principal,
     ) : async [Player.Player] {
         switch (gameCanisters.get(game)) {
