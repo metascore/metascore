@@ -6,7 +6,7 @@ import Debug "mo:base/Debug";
 import G "Game";
 import MS "../Metascore";
 
-shared ({caller = owner}) actor class Game() : async G.Interface {
+shared ({caller = owner}) actor class Game() : async G.MetascoreInterface {
     public query func metascoreScores() : async MS.Scores {
         Debug.print("Returning scores...");
         [
@@ -15,7 +15,9 @@ shared ({caller = owner}) actor class Game() : async G.Interface {
         ];
     };
 
-    public shared func metascoreRegisterSelf(c : MS.RegisterCallback) : async () {
-        await c("Saga Tarot");
+    public shared func metascoreRegisterSelf(callback : MS.RegisterCallback) : async () {
+        await callback({
+            name = "Saga Tarot";
+        });
     };
 };
