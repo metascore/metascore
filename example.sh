@@ -14,10 +14,7 @@ dfx canister call metascore getOverallRanking "(principal \"$gameID\")"
 dfx canister call metascore getRanking "(principal \"$gameID\", $playerS)"
 dfx canister call metascore getPercentile "(principal \"$gameID\", $playerS)"
 
-while [ 1 ]; do
-    sleep 1; # in seconds
-    dfx canister call metascore cron > /dev/null
-done;
+dfx canister call metascore cron > /dev/null
 
 dfx stop
 
