@@ -6,10 +6,13 @@ gameID=$(dfx canister id game)
 
 echo ""
 
+playerP="variant{plug = \"playerPlug\"}"
+playerS="variant{stoic = \"playerStoic\"}"
+
 dfx canister call metascore register "(principal \"$gameID\")"
 dfx canister call metascore getOverallRanking "(principal \"$gameID\")"
-dfx canister call metascore getRanking "(principal \"$gameID\", principal \"uuc56-gyb\")"
-dfx canister call metascore getPercentile "(principal \"$gameID\", principal \"uuc56-gyb\")"
+dfx canister call metascore getRanking "(principal \"$gameID\", $playerS)"
+dfx canister call metascore getPercentile "(principal \"$gameID\", $playerS)"
 
 while [ 1 ]; do
     sleep 1; # in seconds

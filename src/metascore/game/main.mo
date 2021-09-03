@@ -10,8 +10,8 @@ shared ({caller = owner}) actor class Game() : async G.Interface {
     public query func metascoreScores() : async MS.Scores {
         Debug.print("Returning scores...");
         [
-            (Principal.fromText("2ibo7-dia"), 10),
-            (Principal.fromText("uuc56-gyb"), 8),
+            (#plug("playerPlug"), 10),
+            (#stoic("playerStoic"), 8),
         ];
     };
 
