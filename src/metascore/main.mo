@@ -158,33 +158,26 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
     ) : ?Nat {
         // To drive people to try all games, 1/2 of points awarded for participation.
         var score : Float = 0.5;
-        // NOTE: Unpacking options is my second least favourite thing in Motoko.
         switch (_getPercentile(game, player)) {
             case (null) return null;
             case (?percentile) {
+                // Players get up to 1/4 of available points based on performance.
+                score += 0.25 * percentile;
                 switch (_getRanking(game, player)) {
                     case (null) return null;
                     case (?ranking) {
-                        // Players get up to 1/4 of available points based on performance.
-                        score := score + 0.25 * percentile;
-                        // To encourage podium battles, 1/4 of points reserved for top three.
-                        if (ranking == 3) {
-                            score := score + 0.25 / 4;
+                        // Players get up to 1/4 of available points based on top 3
+                        score += switch (ranking) {
+                            case (1) { 0.25;   };
+                            case (2) { 0.125;  }; // 0.25 / 2
+                            case (3) { 0.0625; }; // 0.25 / 4
+                            case (_) { 0;      };
                         };
-                        if (ranking == 2) {
-                            score := score + 0.25 / 2;
-                        };
-                        if (ranking == 2) {
-                            score := score + 0.25;
-                        };
-                        // To retain resolution and make scores cool, we multiply by a trillion.
-                        score := score * 1_000_000_000_000;
-                        // NOTE: Converting types is my least favourite thing in Motoko.
-                        return ?Int.abs(Float.toInt(score));
                     };
                 };
             };
         };
+        ?Int.abs(Float.toInt(score * 1_000_000_000_000));
     };
 
     public query func getMetascore (player : Player.Player) : async Nat {
