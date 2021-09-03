@@ -1,0 +1,19 @@
+type Scores = vec Score;
+type Score = 
+ record {
+   Player;
+   nat;
+ };
+type RegisterCallback = func (Metadata) -> ();
+type Player = 
+ variant {
+   plug: text;
+   stoic: text;
+ };
+type Metadata = record {name: text;};
+type Game = 
+ service {
+   metascoreRegisterSelf: (RegisterCallback) -> ();
+   metascoreScores: () -> (Scores) query;
+ };
+service : () -> Game
