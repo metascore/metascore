@@ -4,8 +4,10 @@ import Blob "mo:base/Blob";
 import Float "mo:base/Float";
 import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
+import Int "mo:base/Int";
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
+import Option "mo:base/Option";
 import Order "mo:base/Order";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
@@ -127,6 +129,52 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
                 };
             };
         };
+    };
+
+    public func getGameScoreComponent (
+        game    : Principal,
+        player  : Player.Player,
+    ) : async ?Nat {
+        // To drive people to try all games, 1/2 of points awarded for participation.
+        var score : Float = 0.5;
+        // NOTE: Unpacking options is my second least favourite thing in Motoko.
+        switch (await getPercentile(game, player)) {
+            case (null) return null;
+            case (?percentile) {
+                switch (await getRanking(game, player)) {
+                    case (null) return null;
+                    case (?ranking) {
+                        // Players get up to 1/4 of available points based on performance.
+                        score := score + 0.25 * percentile;
+                        // To encourage podium battles, 1/4 of points reserved for top three.
+                        if (ranking == 3) {
+                            score := score + 0.25 / 4;
+                        };
+                        if (ranking == 2) {
+                            score := score + 0.25 / 2;
+                        };
+                        if (ranking == 2) {
+                            score := score + 0.25;
+                        };
+                        // To retain resolution and make scores cool, we multiply by a trillion.
+                        score := score * 1_000_000_000_000;
+                        // NOTE: Converting types is my least favourite thing in Motoko.
+                        return ?Int.abs(Float.toInt(score));
+                    };
+                };
+            };
+        };
+    };
+
+    public func getMetascore (player : Player.Player) : async Nat {
+        var score = 0;
+        for ((p, _) in gameCanisters.entries()) {
+            switch (await getGameScoreComponent(p, player)) {
+                case (null) ();
+                case (?component) score := score + component;
+            };
+        };
+        score;
     };
 
     public func getOverallRanking(
