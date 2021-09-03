@@ -9,6 +9,14 @@
     "game": {
       "type": "motoko",
       "main": "src/metascore/game/main.mo"
+    },
+    "metascore_assets": {
+      "dependencies": ["metascore"],
+      "frontend": {
+        "entrypoint": "src/metascore_assets/src/index.html"
+      },
+      "source": ["src/metascore_assets/assets", "dist/metascore_assets/"],
+      "type": "assets"
     }
   },
   "defaults": {
