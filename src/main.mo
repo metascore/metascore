@@ -16,7 +16,7 @@ import Text "mo:base/Text";
 
 import Debug "mo:base/Debug";
 
-import G "game/Game";
+import G "Game";
 import MS "Metascore";
 import Player "Player";
 

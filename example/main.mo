@@ -3,8 +3,8 @@ import Result "mo:base/Result";
 
 import Debug "mo:base/Debug";
 
-import G "Game";
-import MS "../Metascore";
+import G "../src/Game";
+import MS "../src/Metascore";
 
 shared ({caller = owner}) actor class Game() : async G.MetascoreInterface {
     public query func metascoreScores() : async MS.Scores {

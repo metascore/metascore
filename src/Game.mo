@@ -1,4 +1,4 @@
-import MS "../Metascore";
+import MS "Metascore";
 
 module {
     public type MetascoreInterface = actor {

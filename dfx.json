@@ -4,11 +4,11 @@
   "canisters": {
     "metascore": {
       "type": "motoko",
-      "main": "src/metascore/main.mo"
+      "main": "src/main.mo"
     },
     "game": {
       "type": "motoko",
-      "main": "src/metascore/game/main.mo"
+      "main": "example/main.mo"
     }
   },
   "defaults": {
