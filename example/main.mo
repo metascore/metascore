@@ -3,11 +3,10 @@ import Result "mo:base/Result";
 
 import Debug "mo:base/Debug";
 
-import G "../src/Game";
-import MS "../src/Metascore";
+import MPublic "../public/Metascore";
 
-shared ({caller = owner}) actor class Game() : async G.MetascoreInterface {
-    public query func metascoreScores() : async MS.Scores {
+shared ({caller = owner}) actor class Game() : async MPublic.GameInterface {
+    public query func metascoreScores() : async [MPublic.Score] {
         Debug.print("Returning scores...");
         [
             (#plug("playerPlug"), 10),
@@ -15,7 +14,7 @@ shared ({caller = owner}) actor class Game() : async G.MetascoreInterface {
         ];
     };
 
-    public shared func metascoreRegisterSelf(callback : MS.RegisterCallback) : async () {
+    public shared func metascoreRegisterSelf(callback : MPublic.RegisterCallback) : async () {
         await callback({
             name = "Saga Tarot";
         });

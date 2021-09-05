@@ -2,40 +2,28 @@ import Bool "mo:base/Bool";
 import Hash "mo:base/Hash";
 import Text "mo:base/Text";
 
+import MPublic "../public/Metascore";
+
 module {
-    public type Player = {
-        #stoic : Text;
-        #plug  : Text;
-    };
-
-    public let equal = func (a : Player, b : Player) : Bool {
-        switch (a) {
-            case (#stoic(a)) {
-                switch (b) {
-                    case (#stoic(b)) Text.equal(a, b);
-                    case (#plug(b)) false;
-                };
-            };
-            case (#plug(a)) {
-                switch (b) {
-                    case (#plug(b)) Text.equal(a, b);
-                    case (#stoic(b)) false;
-                };
-            }
+    public let equal = func (a : MPublic.Player, b : MPublic.Player) : Bool {
+        switch (a, b) {
+            case (#stoic(a), #stoic(b)) { Text.equal(a, b); };
+            case (#plug(a) , #plug(b) ) { Text.equal(a, b); };
+            case (_) { false; };
         };
     };
 
-    public let hash = func (player : Player) : Hash.Hash {
+    public let hash = func (player : MPublic.Player) : Hash.Hash {
         switch (player) {
-            case (#stoic(player)) Text.hash(player);
-            case (#plug(player)) Text.hash(player);
+            case (#stoic(player)) { Text.hash(player); };
+            case (#plug(player))  { Text.hash(player); };
         };
     };
 
-    public let toText = func (player : Player) : Text {
+    public let toText = func (player : MPublic.Player) : Text {
         switch (player) {
-            case (#stoic(player)) player;
-            case (#plug(player)) player;
+            case (#stoic(player)) { player; };
+            case (#plug(player))  { player; };
         };
     };
 };

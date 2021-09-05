@@ -16,31 +16,23 @@ import Text "mo:base/Text";
 
 import Debug "mo:base/Debug";
 
-import G "Game";
-import MS "Metascore";
+import M "Metascore";
+import MPublic "../public/Metascore";
 import Player "Player";
 
-shared ({caller = owner}) actor class Metascore() : async MS.Interface {
-
-    // DISCLAIMER:
-    // Ignoring stable variables for now.
+shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
+    // DISCLAIMER: Ignoring stable variables for now.
 
     // Time since last cron call.
     private var lastCron : Int = Time.now();
     // Map of registered game canisters.
-    private let state = MS.Metascore();
-
-    private type Record = {
-        name          : Text;
-        rawScores     : MS.Scores;
-        playerRanking : HashMap.HashMap<Player.Player, Nat>;
-    };
+    private let state = M.Metascore();
 
     public func register(
-        id : Principal,
+        id : MPublic.GamePrincipal,
     ) : async Result.Result<(), Text> {   
         try {
-            let game : G.MetascoreInterface = actor(Principal.toText(id));
+            let game : MPublic.GameInterface = actor(Principal.toText(id));
             await game.metascoreRegisterSelf(registerGame);
             #ok();
         } catch (e) {
@@ -48,13 +40,25 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
         }
     };
 
-    public shared ({caller}) func registerGame(
-        metadata : MS.Metadata
+    public shared({caller}) func scoreUpdate(
+        scores : [MPublic.Score],
+    ) : async() {
+        switch (state.games.get(caller)) {
+            // Means that the caller was not the game canister itself.
+            case (null) {};
+            case (? g)  {
+                // TODO: update scores.
+            };
+        };
+    };
+
+    public shared({caller}) func registerGame(
+        metadata : MPublic.Metadata
     ) : async () {
         Debug.print("Registering " # metadata.name # " (" # Principal.toText(caller) # ")...");
         let scores = await getScores(caller);
-        state.addGame(caller, {
-            name          = metadata.name;
+        state.games.put(caller, {
+            metadata;
             rawScores     = scores;
             playerRanking = scoresToRanking(scores);
         });
@@ -76,22 +80,22 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
 
     private func queryAllScores() : async () {
         Debug.print("Getting scores...");
-        for ((p, g) in state.games()) {
-            let scores = await getScores(p);
-            state.updateGame(p, {
-                name          = g.name;
+        for ((gID, g) in state.games.entries()) {
+            let scores = await getScores(gID);
+            state.games.put(gID, {
+                metadata      = g.metadata;
                 rawScores     = scores;
                 playerRanking = scoresToRanking(scores);
             });
         };
     };
 
-    private func getScores(id : Principal) : async MS.Scores {
-        let game : G.MetascoreInterface = actor(Principal.toText(id));
+    private func getScores(id : MPublic.GamePrincipal) : async [MPublic.Score] {
+        let game : MPublic.GameInterface = actor(Principal.toText(id));
         Array.sort(
             await game.metascoreScores(),
             // Sort from high to low.
-            func (a : MS.Score, b : MS.Score) : Order.Order {
+            func (a : MPublic.Score, b : MPublic.Score) : Order.Order {
                 let (x, y) = (a.1, b.1);
                 if      (x < y)  { #greater; }
                 else if (x == y) { #equal;   }
@@ -101,59 +105,39 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
     };
 
     public query func getPercentile(
-        game    : Principal,
-        player  : Player.Player,
+        game    : MPublic.GamePrincipal,
+        player  : MPublic.Player,
     ) : async ?Float {
         state.getPercentile(game, player);
     };
 
     public query func getRanking(
-        game    : Principal,
-        player  : Player.Player,
+        game    : MPublic.GamePrincipal,
+        player  : MPublic.Player,
     ) : async ?Nat {
         state.getRanking(game, player);
     };
 
-    public query func getGameScoreComponent (
-        game    : Principal,
-        player  : Player.Player,
-    ) : async ?Nat {
-        state.getGameScoreComponent(game, player);
+    public query func getMetascore(
+        game    : MPublic.GamePrincipal,
+        player  : MPublic.Player,
+    ) : async Nat {
+        state.getMetascore(game, player);
     };
 
-    public query func getMetascore(player : Player.Player) : async Nat {
-        var score = 0;
-        for (id in state.gameIDs()) {
-            switch (state.getGameScoreComponent(id, player)) {
-                case (null) {};
-                case (? s)  {
-                    score += s;
-                };
-            };
-        };
-        score;
+    public query func getOverallMetascore(
+        player  : MPublic.Player,
+    ) : async Nat {
+        state.getOverallMetascore(player);
     };
 
-    public query func getOverallRanking(
-        gameID : Principal,
-    ) : async [Player.Player] {
-        switch (state.getGame(gameID)) {
-            case (null) { []; };
-            case (? gc) {
-                Array.tabulate<Player.Player>(
-                    gc.rawScores.size(),
-                    func (i : Nat) : Player.Player { 
-                        let (p, _) = gc.rawScores[i];
-                        p;
-                    },
-                );
-            };
-        };
+    public query func getGames() : async [MPublic.Metadata] {
+        state.getGames();
     };
 
     // Assumes that the incoming scores are sorted (high to low).
-    private func scoresToRanking(scores : MS.Scores) : HashMap.HashMap<Player.Player, Nat> {
-        let m = HashMap.HashMap<Player.Player, Nat>(scores.size(), Player.equal, Player.hash);
+    private func scoresToRanking(scores : [MPublic.Score]) : HashMap.HashMap<MPublic.Player, Nat> {
+        let m = HashMap.HashMap<MPublic.Player, Nat>(scores.size(), Player.equal, Player.hash);
         for (i in scores.keys()) {
             let (p, _) = scores[i];
             m.put(p, i + 1);
@@ -165,13 +149,13 @@ shared ({caller = owner}) actor class Metascore() : async MS.Interface {
         r : AssetStorage.HttpRequest,
     ) : async AssetStorage.HttpResponse {
         var text = "<h1>Hello world!</h1>";
-        for ((p, r) in state.games()) {
+        for ((gID, g) in state.games.entries()) {
             text #= "<div>";
-            text #= "<h2>" # r.name # " (" # Principal.toText(p) # ")</h2>";
+            text #= "<h2>" # g.metadata.name # " (" # Principal.toText(gID) # ")</h2>";
             text #= "<h3>Top 3</h3>";
             text #= "<ol>";
-            for (i in Iter.range(0, Nat.min(2, r.rawScores.size() - 1))) {
-                text #= "<li>" # Player.toText(r.rawScores[i].0) # "</li>";
+            for (i in Iter.range(0, Nat.min(2, g.rawScores.size() - 1))) {
+                text #= "<li>" # Player.toText(g.rawScores[i].0) # "</li>";
             };
             text #= "</ol>";
             text #= "</div>";

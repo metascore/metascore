@@ -10,11 +10,10 @@ playerP="variant{plug = \"playerPlug\"}"
 playerS="variant{stoic = \"playerStoic\"}"
 
 dfx canister call metascore register "(principal \"$gameID\")"
-dfx canister call metascore getOverallRanking "(principal \"$gameID\")"
 dfx canister call metascore getRanking "(principal \"$gameID\", $playerS)"
 dfx canister call metascore getPercentile "(principal \"$gameID\", $playerS)"
-dfx canister call metascore getGameScoreComponent "(principal \"$gameID\", $playerP)"
-dfx canister call metascore getGameScoreComponent "(principal \"$gameID\", $playerS)"
+dfx canister call metascore getMetascore "(principal \"$gameID\", $playerP)"
+dfx canister call metascore getMetascore "(principal \"$gameID\", $playerS)"
 
 dfx canister call metascore cron > /dev/null
 
@@ -25,7 +24,6 @@ dfx stop
 # [Canister rwlgt-iiaaa-aaaaa-aaaaa-cai] Returning scores...
 # (variant { ok })
 #
-# (vec { principal "2ibo7-dia"; principal "uuc56-gyb" })
 # (opt (2 : nat))
 # (opt (0.5 : float64))
 # (opt (1_000_000_000_000 : nat))
