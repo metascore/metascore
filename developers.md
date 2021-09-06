@@ -1,35 +1,44 @@
 # How to Integrate with Metascore
 
-Here's how it works:
+1. Player scores must be associated with a plug or stoic wallet address.
+2. Your game must implement the Metascore Game Interface.
+3. Your game calls its own `metascoreRegisterSelf` method.
 
-1. Your game will need to integrate with Stoic or Plug.
-2. Your game will need to expose a method that dumps all of the scores for all of the players.
-3. You will need to register your game with Metascore.
+- TODO: [Motoko Example](#)
+- TODO: [Rust Example](#)
+- TODO: [Unity Example](#)
+- TODO: [Stoic Integration Example](#)
+- TODO: [Plug Integration Example](#)
 
 That's it! Let's take a closer look.
 
-## Wallet Integration
+## Overview
 
-We need a way to identify players across games. Internet Identity strictly prevents this, so your game canister must allow players to authenticate with either Stoic or Plug.
-
-Not sure how to add Stoic and Plug integrations? TODO: link a little tutorial or code snippet. Remember, you don't have to integrate both, just one of them will do! If you're having a hard time, pop into the [Dfinity Dev Discord](https://discord.gg/YUyZDtjmHt) and ask for help in the #hackathon channel.
-
-## Dumping Player Scores
-
-The standard method that your game must implement is this:
+Your Game Can is responsible for publishing scores to the Metascore Can (mainnet principal `todo-put-mainnet-principal-here`,) and keeping its metadata in that canister up to date.
 
 ```motoko
-public query func metascoreDump () : async [(player : {#stoic : Text; #plug : Text}, score : Nat)] { ... };
+public type GameInterface = actor {
+    metascoreScores : query () -> async [Score];
+    metascoreRegisterSelf : shared (RegisterCallback) -> async ();
+};
 ```
+*See the whole interface at [public/Metascore.mo](public/Metascore.mo)*
 
-This method should simply read whatever internal state you're using to store player scores and return that. **Edit: Only one score per player should be returned, and that should be their highest score achieved in the game.**
+## Registering with Metascore
 
-This it! The only code you need to implement is 1) stoic or plug integration, 2) `metascoreDump`.
+Any canister that properly implements `Metascore.GameInterface` may register itself with Metascore by calling its own `metascoreRegisterSelf` method.
 
-## Register Your Game
+## Syncing Scores
 
-Make sure you complete your integration before registering with the Metascore Can. We will be implementing a UI for you to register your own game cans. This UI will validate that your canister is compatible and will provide an error message if it is not.
+1. Your Game Can should publish new high scores for a player as they happen (via the `Metascore.scoreUpdate` method). These incremental updates will make sure that scores for your game are always update to date on Metascore.
+2. The Metascore Can will periodically (around once a day) ask your Game Can for a list of all the highest scores for all of your players (via your Game Can's `metascoreScores` method.) Periodic dumps will likely happen in off hours or manually at certain times, and are intended to act as a safety net for instances where the asyncronous pub/sub architecture fails.
 
-## Scores In Your Game
+## Syncing Metadata
 
-We don't mind how your game's specific scoring works, that's up to you! Your scores could go up to million-billion, or ten, it makes no difference to us.
+Your Game Can updates its metadata when it registers with the Metascore Can, and on each periodic call. Implementing the `Metascore.GameInterface` takes care of this, so game's metadata will automatically be synced at least once a day.
+
+## Wallet Integration
+
+We need a way to identify players across games. Internet Identity strictly prevents this, so your game canister must allow players to authenticate with either Stoic or Plug. **It is essential that all of the scores you report to Metascore include the plug or stoic wallet address that they are associated with.**
+
+Not sure how to add Stoic and Plug integrations? TODO: [Stoic Example](#), [Plug Example](#). Remember, you don't have to integrate both, just one of them will do! If you're having a hard time, pop into the [Dfinity Dev Discord](https://discord.gg/YUyZDtjmHt) and ask for help in the #hackathon channel.

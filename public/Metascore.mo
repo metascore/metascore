@@ -10,7 +10,7 @@ module {
         // Endpoint that returns the scores of the game.
         // This will be called once a day to sync all scores. Games are 
         // responsible to update the scores in the Metascore canister 
-        // themselves, by calling the 'updateScores' endpoint. 
+        // themselves, by calling the 'scoreUpdate' endpoint. 
         metascoreScores : query () -> async [Score];
 
         // Function so the game (actor) can register itself.
