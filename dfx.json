@@ -4,7 +4,7 @@
   "canisters": {
     "metascore": {
       "type": "motoko",
-      "main": "src/main.mo"
+      "main": "metascore/main.mo"
     },
     "game": {
       "type": "motoko",

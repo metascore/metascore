@@ -2,7 +2,7 @@ import Bool "mo:base/Bool";
 import Hash "mo:base/Hash";
 import Text "mo:base/Text";
 
-import MPublic "../public/Metascore";
+import MPublic "../src/Metascore";
 
 module {
     public let equal = func (a : MPublic.Player, b : MPublic.Player) : Bool {

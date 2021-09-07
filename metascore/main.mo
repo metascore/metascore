@@ -17,7 +17,7 @@ import Text "mo:base/Text";
 import Debug "mo:base/Debug";
 
 import M "Metascore";
-import MPublic "../public/Metascore";
+import MPublic "../src/Metascore";
 import Player "Player";
 
 shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
