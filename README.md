@@ -1,10 +1,6 @@
 # Metascore
 
-> *I wanna be the very best, like no one ever was.* 
-
-Aggregate player scores across all of the games in the hackathon to determine who is truly the most powerful gamer.
-
-Earn NFTs and loot by playing hackathon games!
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Metascore is an Internet Computer community project to be the one-stop-shop for leaderboards during the <a href="https://twitter.com/DscvrO?ref_src=twsrc%5Etfw">@DscvrO</a> S2 Hackathon, plus awesome NFT rewards and prizes for players 🕹🚀💎</p>&mdash; METASCORE (@MetascoreHACK) <a href="https://twitter.com/MetascoreHACK/status/1434972965351792640?ref_src=twsrc%5Etfw">September 6, 2021</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 ## Participating as a Developer
 
@@ -12,7 +8,7 @@ You should participate in Metascore, because gamers will be trying their hardest
 
 ## Participating as a Gamer
 
-*Sweet image of the badges that you can earn would go here.*
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Players will gain a rank based on their participation and performance in <a href="https://twitter.com/DscvrO?ref_src=twsrc%5Etfw">@DscvrO</a> <a href="https://twitter.com/hashtag/Hackathon?src=hash&amp;ref_src=twsrc%5Etfw">#Hackathon</a> Season 2 games. Here&#39;s some concept art for these badges. <a href="https://t.co/d5ZdevFmkV">pic.twitter.com/d5ZdevFmkV</a></p>&mdash; METASCORE (@MetascoreHACK) <a href="https://twitter.com/MetascoreHACK/status/1434975215319076864?ref_src=twsrc%5Etfw">September 6, 2021</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 *Sweet breakdown of the prize pool would go here.*
 
