@@ -76,6 +76,13 @@ We should also encourage the community to report anything fishy (ex: a game scor
 
 TODO: think more about requirements
 
+**Actors**
+
+- Metascore Canister "Canister"
+- Canister owners
+- Players
+- Gem devs
+
 ## Motoko
 
 - Canister can have multiple owners, so that ownership can be shared with trusted community members (gotta be limited, no logs)
@@ -86,4 +93,5 @@ TODO: think more about requirements
 
 ## Frontend
 
-- Users can validate their accounts
+- Players can validate their accounts
+- Game devs can register their game canister with Metascore
