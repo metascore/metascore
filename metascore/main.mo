@@ -28,6 +28,17 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
     // Map of registered game canisters.
     private let state = M.Metascore();
 
+    // List of Metascore admins, these are principals that can trigger the cron,
+    // add other admins and remove games.
+    private let admins = [owner];
+
+    private func isAdmin(p : Principal) : Bool {
+        for (a in admins.vals()) {
+            if (a == p) { return true; };
+        };
+        false;
+    };
+
     public func register(
         id : MPublic.GamePrincipal,
     ) : async Result.Result<(), Text> {   
@@ -38,6 +49,13 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
         } catch (e) {
             #err("Could not register game with principal ID: " # Principal.toText(id));
         }
+    };
+
+    public shared({caller}) func unregister(
+        id : MPublic.GamePrincipal,
+    ) : async () {
+        assert(isAdmin(caller) or id == caller);
+        state.games.delete(id);
     };
 
     public shared({caller}) func scoreUpdate(
@@ -69,7 +87,7 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
     // Endpoint to trigger cron-like operations.
     // Fastest interval = 3 sec.
     public shared ({caller}) func cron() : async () {
-        assert(caller == owner);
+        assert(isAdmin(caller));
 
         let now = Time.now();
         if (3 * sec < now - lastCron) {

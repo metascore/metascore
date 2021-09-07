@@ -15,6 +15,10 @@ dfx canister call metascore getPercentile "(principal \"$gameID\", $playerS)"
 dfx canister call metascore getMetascore "(principal \"$gameID\", $playerP)"
 dfx canister call metascore getMetascore "(principal \"$gameID\", $playerS)"
 
+# Test unregistering games.
+dfx canister call metascore unregister "(principal \"$gameID\")"
+dfx canister call metascore getRanking "(principal \"$gameID\", $playerS)"
+
 dfx canister call metascore cron > /dev/null
 
 dfx stop

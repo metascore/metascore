@@ -16,10 +16,14 @@ module {
     // NOTE: make sure this is updated! Ensures some compiler checks. ~ quint
     public type FullInterface = actor {
         // MetascoreInterface (see public/Metascore.mo).
+
         register    : shared (MPublic.GamePrincipal) -> async Result.Result<(), Text>;
-        scoreUpdate : shared ([MPublic.Score]) -> async ();
+        // @auth: admin
+        unregister  : shared (MPublic.GamePrincipal) -> async ();
+        scoreUpdate : shared ([MPublic.Score])       -> async ();
 
         // PublicInterface (see public/Stats.mo).
+
         getPercentile         : query (MPublic.GamePrincipal, MPublic.Player) -> async ?Float;
         getRanking            : query (MPublic.GamePrincipal, MPublic.Player) -> async ?Nat;
         getMetascore          : query (MPublic.GamePrincipal, MPublic.Player) -> async Nat;
@@ -27,6 +31,8 @@ module {
         getGames              : query () -> async [MPublic.Metadata];
 
         // Internal Interface (used in main.mo).
+
+        // @auth: admin
         cron : shared () -> async ();
         registerGame : shared MPublic.Metadata -> async ();
         // TODO: add functions whenever it is public.
