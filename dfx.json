@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "dfx": "0.8.0",
+  "canisters": {
+    "metascore": {
+      "type": "motoko",
+      "main": "metascore/main.mo"
+    },
+    "game": {
+      "type": "motoko",
+      "main": "example/main.mo"
+    }
+  },
+  "defaults": {
+    "build": {
+      "packtool": "vessel sources"
+    }
+  }
+}
