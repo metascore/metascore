@@ -1,10 +1,12 @@
 # How to Integrate with Metascore
 
+Staging Metascore canister on mainnet: [rl4ub-oqaaa-aaaah-qbi3a-cai](https://rl4ub-oqaaa-aaaah-qbi3a-cai.raw.ic0.app/)
+
 1. Player scores must be associated with a plug or stoic wallet address.
 2. Your game must implement the Metascore Game Interface.
 3. Your game calls its own `metascoreRegisterSelf` method.
 
-- TODO: [Motoko Example](#)
+- [Motoko Example](https://github.com/metascore/metagame)
 - TODO: [Rust Example](#)
 - TODO: [Unity Example](#)
 - TODO: [Stoic Integration Example](#)
@@ -14,7 +16,7 @@ That's it! Let's take a closer look.
 
 ## Overview
 
-Your Game Can is responsible for publishing scores to the Metascore Can (mainnet principal `todo-put-mainnet-principal-here`,) and keeping its metadata in that canister up to date.
+Your Game Can is responsible for publishing scores to the Metascore Can (mainnet principal `rl4ub-oqaaa-aaaah-qbi3a-cai`,) and keeping its metadata in that canister up to date.
 
 ```motoko
 public type GameInterface = actor {
@@ -22,7 +24,7 @@ public type GameInterface = actor {
     metascoreRegisterSelf : shared (RegisterCallback) -> async ();
 };
 ```
-*See the whole interface at [public/Metascore.mo](public/Metascore.mo)*
+*See the whole interface at [src/Metascore.mo](src/Metascore.mo)*
 
 ## Registering with Metascore
 
