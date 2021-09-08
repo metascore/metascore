@@ -2,9 +2,12 @@
 
 dfx start --background --clean
 dfx deploy --no-wallet
+ownerID=$(dfx identity get-principal)
 gameID=$(dfx canister id game)
 
 echo ""
+
+dfx canister call metascore isAdmin "(principal \"$ownerID\")"
 
 playerP="variant{plug = \"playerPlug\"}"
 playerS="variant{stoic = \"playerStoic\"}"

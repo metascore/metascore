@@ -30,13 +30,42 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
 
     // List of Metascore admins, these are principals that can trigger the cron,
     // add other admins and remove games.
-    private let admins = [owner];
+    private var admins = [owner];
 
-    private func isAdmin(p : Principal) : Bool {
+    private func _isAdmin(p : Principal) : Bool {
         for (a in admins.vals()) {
             if (a == p) { return true; };
         };
         false;
+    };
+
+    // Adds a new principal as an admin.
+    // @auth: owner
+    public shared({caller}) func addAdmin(p : Principal) : async () {
+        assert(caller == owner);
+        admins := Array.append(admins, [p]);
+    };
+
+    // Removes the given principal from the list of admins.
+    // @auth: owner
+    public shared({caller}) func removeAdmin(p : Principal) : async () {
+        assert(caller == owner);
+        admins := Array.filter(
+            admins,
+            func (a : Principal) : Bool {
+                a != p;
+            },
+        );
+    };
+
+    // Check whether the given principal is an admin.
+    // @auth: admin
+    public query({caller}) func isAdmin(p : Principal) : async Bool {
+        assert(_isAdmin(caller));
+        for (a in admins.vals()) {
+            if (a == p) return true;
+        };
+        return false;
     };
 
     public func register(
@@ -54,7 +83,7 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
     public shared({caller}) func unregister(
         id : MPublic.GamePrincipal,
     ) : async () {
-        assert(isAdmin(caller) or id == caller);
+        assert(_isAdmin(caller) or id == caller);
         state.games.delete(id);
     };
 
@@ -87,7 +116,7 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
     // Endpoint to trigger cron-like operations.
     // Fastest interval = 3 sec.
     public shared ({caller}) func cron() : async () {
-        assert(isAdmin(caller));
+        assert(_isAdmin(caller));
 
         let now = Time.now();
         if (3 * sec < now - lastCron) {
