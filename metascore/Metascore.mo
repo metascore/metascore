@@ -6,13 +6,14 @@ import Iter "mo:base/Iter";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 
+import GameRecord "GameRecord";
+import Player "Player";
 import MPublic "../src/Metascore";
 import MStats "../src/Stats";
 
 // This module is for internal use and should never be imported somewhere other
 // than 'main.mo';
 module {
-
     // NOTE: make sure this is updated! Ensures some compiler checks. ~ quint
     public type FullInterface = actor {
         // MetascoreInterface (see public/Metascore.mo).
@@ -38,27 +39,24 @@ module {
         // TODO: add functions whenever it is public.
     };
 
-    // Internal representation of a game.
-    public type GameRecord = {
-        // Name of the game.
-        metadata : MPublic.Metadata;
-        // The raw scores of the game.
-        // TODO: use data structure to avoid duplicates and efficient updates.
-        rawScores : [MPublic.Score];
-        // Calculated ranking (1st..) of every player. Should always be up to
-        // date (will be updates together with raw scores).
-        playerRanking : HashMap.HashMap<MPublic.Player, Nat>;
-    };
-
     // Internal class to keep track of data within the Metascore canister.
     // Used to keep the 'main.mo' file at a minimum.
-    public class Metascore() : MStats.PublicInterface {
-        public let games = HashMap.HashMap<
-            MPublic.GamePrincipal, // Game principal id.
-            GameRecord,            // Game state.
-        >(
-            0, Principal.equal, Principal.hash,
-        );
+    public class Metascore(
+        state : [GameRecord.GameRecordStable],
+    ) : MStats.PublicInterface {
+        public let games = GameRecord.fromStable(state);
+
+        public func putGameRecord(
+            gameID   : MPublic.GamePrincipal,
+            metadata : MPublic.Metadata, 
+            scores   : [MPublic.Score],
+        ) {
+            games.put(gameID, {
+                metadata;
+                rawScores     = scores;
+                playerRanking = GameRecord.scoresToRanking(scores);
+            });
+        };
 
         public func getPercentile(
             game    : MPublic.GamePrincipal,

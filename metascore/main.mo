@@ -16,21 +16,29 @@ import Text "mo:base/Text";
 
 import Debug "mo:base/Debug";
 
+import GameRecord "GameRecord";
 import M "Metascore";
 import MPublic "../src/Metascore";
 import Player "Player";
 
 shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
-    // DISCLAIMER: Ignoring stable variables for now.
-
     // Time since last cron call.
-    private var lastCron : Int = Time.now();
+    private stable var lastCron : Int = Time.now();
     // Map of registered game canisters.
-    private let state = M.Metascore();
+    private var games : [GameRecord.GameRecordStable] = [];
+    private let state = M.Metascore(games);
+
+    system func preupgrade() {
+        games := GameRecord.toStable(state.games);
+    };
+
+    system func postupgrade() {
+        games := [];
+    };
 
     // List of Metascore admins, these are principals that can trigger the cron,
     // add other admins and remove games.
-    private var admins = [owner];
+    private stable var admins = [owner];
 
     private func _isAdmin(p : Principal) : Bool {
         for (a in admins.vals()) {
@@ -104,11 +112,7 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
     ) : async () {
         Debug.print("Registering " # metadata.name # " (" # Principal.toText(caller) # ")...");
         let scores = await getScores(caller);
-        state.games.put(caller, {
-            metadata;
-            rawScores     = scores;
-            playerRanking = scoresToRanking(scores);
-        });
+        state.putGameRecord(caller, metadata, scores);
     };
 
     private let sec = 1_000_000_000;
@@ -129,11 +133,7 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
         Debug.print("Getting scores...");
         for ((gID, g) in state.games.entries()) {
             let scores = await getScores(gID);
-            state.games.put(gID, {
-                metadata      = g.metadata;
-                rawScores     = scores;
-                playerRanking = scoresToRanking(scores);
-            });
+            state.putGameRecord(gID, g.metadata, scores);
         };
     };
 
@@ -180,16 +180,6 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
 
     public query func getGames() : async [MPublic.Metadata] {
         state.getGames();
-    };
-
-    // Assumes that the incoming scores are sorted (high to low).
-    private func scoresToRanking(scores : [MPublic.Score]) : HashMap.HashMap<MPublic.Player, Nat> {
-        let m = HashMap.HashMap<MPublic.Player, Nat>(scores.size(), Player.equal, Player.hash);
-        for (i in scores.keys()) {
-            let (p, _) = scores[i];
-            m.put(p, i + 1);
-        };
-        m;
     };
 
     public query func http_request(
