@@ -2,6 +2,10 @@
 
 <blockquote class="twitter-tweet"><p lang="en" dir="ltr">Metascore is an Internet Computer community project to be the one-stop-shop for leaderboards during the <a href="https://twitter.com/DscvrO?ref_src=twsrc%5Etfw">@DscvrO</a> S2 Hackathon, plus awesome NFT rewards and prizes for players 🕹🚀💎</p>&mdash; METASCORE (@MetascoreHACK) <a href="https://twitter.com/MetascoreHACK/status/1434972965351792640?ref_src=twsrc%5Etfw">September 6, 2021</a></blockquote>
 
+- [Telegram Community](https://t.co/i906ywqr5u?amp=1)
+
+📣 This is an open community project and we are in need of skillsets of all kinds. Reach out if you'd like to help!
+
 ## Participating as a Developer
 
 You should participate in Metascore, because gamers will be trying their hardest to get high scores on all the integrated games. [Developer readme](./developers.md).
