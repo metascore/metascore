@@ -32,8 +32,8 @@ module {
     // Represents a player.
     // Supported: Stoic and Plug.
     public type Player = {
-        #stoic : Text;
-        #plug  : Text;
+        #stoic : Principal;
+        #plug  : Principal;
     };
 
     // Score of a player.
