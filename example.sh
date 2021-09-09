@@ -28,6 +28,7 @@ dfx deploy --no-wallet game
 
 ownerID=$(dfx identity get-principal)
 gameID=$(dfx canister id game)
+metascoreID=$(dfx canister id metascore)
 player1="variant{plug = principal \"ztlax-3lufm-ahpvx-36scg-7b4lf-m34dn-md7or-ltgjf-nhq4k-qqffn-oqe\"}"
 player2="variant{stoic = principal \"k4ltb-urk4m-kdfc4-a2sib-br5ub-gcnep-tkxt2-2oqqa-ldzj2-zvmyw-gqe\"}"
 
@@ -43,7 +44,7 @@ check "Register invalid game" "$(dfx canister call metascore register "(principa
   },
 )"
 
-check "Register game" "$(dfx canister call metascore register "(principal \"$gameID\")")" "(variant { ok })"
+check "Register game" "$(dfx canister call game register "(principal \"$metascoreID\")")" "(variant { ok })"
 
 check "Get games" "$(dfx canister call metascore getGames)" "(vec { record { name = \"Saga Tarot\" } })"
 
@@ -58,6 +59,13 @@ echo ""
 check "Get Player2 percentile" "$(dfx canister call metascore getPercentile "(principal \"$gameID\", $player2)")" "(opt (0.5 : float64))"
 check "Get Player2 ranking"    "$(dfx canister call metascore getRanking "(principal \"$gameID\", $player2)")"    "(opt (2 : nat))"
 check "Get Player2 metascore"  "$(dfx canister call metascore getOverallMetascore "($player2)")"                  "(750_000_000_000 : nat)"
+
+echo ""
+
+check "Updates scores" "$(dfx canister call game sendNewScores "(vec { record { $player2; 15 } })")" "()"
+check "Get Player1 metascore" "$(dfx canister call metascore getOverallMetascore "($player1)")" "(750_000_000_000 : nat)"
+check "Get Player2 metascore" "$(dfx canister call metascore getOverallMetascore "($player2)")" "(1_000_000_000_000 : nat)"
+
 
 bold "\n> TESTS ${GREEN}PASSED${NC}\n"
 

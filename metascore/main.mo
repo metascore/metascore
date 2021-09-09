@@ -19,18 +19,37 @@ import M "Metascore";
 import MPublic "../src/Metascore";
 import Player "Player";
 
+import Debug "mo:base/Debug";
+
 shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
     // Time since last cron call.
     private stable var lastCron : Int = Time.now();
     // Map of registered game canisters.
     private var games : [GameRecord.GameRecordStable] = [];
     private let state = M.Metascore(games);
+    private let scores = GameRecord.emptyPlayerScores(games.size());
 
     system func preupgrade() {
         games := GameRecord.toStable(state.games);
     };
 
     system func postupgrade() {
+        for ((gID, (_, ps)) in games.vals()) {
+            for (p in ps.vals()) {
+                let pID = p.player;
+                switch (scores.get(pID)) {
+                    case (null) {
+                        let ps = GameRecord.emptyPlayerGameScores(1);
+                        ps.put(gID, state.getMetascore(gID, pID));
+                        scores.put(pID, ps);
+                    };
+                    case (? ps) {
+                        ps.put(gID, state.getMetascore(gID, pID));
+                        scores.put(pID, ps);
+                    };
+                };
+            };
+        };
         games := [];
     };
 
@@ -105,7 +124,7 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
             // Means that the caller was not the game canister itself.
             case (null) {};
             case (? g)  {
-                // TODO: update scores.
+                putGameRecord(caller, g.metadata, sortScores(scores));
             };
         };
     };
@@ -114,7 +133,7 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
         metadata : MPublic.Metadata
     ) : async () {
         let scores = await getScores(caller);
-        state.putGameRecord(caller, metadata, scores);
+        putGameRecord(caller, metadata, scores);
     };
 
     private let sec = 1_000_000_000;
@@ -131,18 +150,63 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
         };
     };
 
+    private func putGameRecord(
+        gameID   : MPublic.GamePrincipal,
+        metadata : MPublic.Metadata,
+        players  : [GameRecord.PlayerRecord],
+    ) {
+        switch (state.games.get(gameID)) {
+            case (null) {
+                state.games.put(gameID, {
+                    metadata;
+                    players = GameRecord.playersFromArray(players); 
+                });
+            };
+            case (? gr) {
+                let ps = gr.players;
+                for (p in players.vals()) {
+                    let pID = p.player;
+                    gr.players.put(pID, p);
+                };
+                state.games.put(gameID, {
+                    metadata = gr.metadata;
+                    players  = ps;
+                });
+             };
+        };
+        Debug.print(debug_show(players.size()));
+        for (p in players.vals()) {
+            let pID = p.player;
+            switch (scores.get(pID)) {
+                case (null) {
+                    let ps = GameRecord.emptyPlayerGameScores(1);
+                    ps.put(gameID, state.getMetascore(gameID, pID));
+                    scores.put(pID, ps);
+                };
+                case (? ps) {
+                    ps.put(gameID, state.getMetascore(gameID, pID));
+                    scores.put(pID, ps);
+                };
+            };
+        };
+    };
+
     private func queryAllScores() : async () {
         for ((gID, g) in state.games.entries()) {
             let scores = await getScores(gID);
-            state.putGameRecord(gID, g.metadata, scores);
+            putGameRecord(gID, g.metadata, scores);
         };
     };
 
     private func getScores(id : MPublic.GamePrincipal) : async [GameRecord.PlayerRecord] {
         let game : MPublic.GameInterface = actor(Principal.toText(id));
+        sortScores(await game.metascoreScores());
+    };
+
+    private func sortScores(scores : [MPublic.Score]) : [GameRecord.PlayerRecord] {
         Array.sort<GameRecord.PlayerRecord>(
             Array.map<MPublic.Score, GameRecord.PlayerRecord>(
-                await game.metascoreScores(),
+                scores,
                 func ((player, score) : MPublic.Score) : GameRecord.PlayerRecord {
                     { player; score; };
                 },

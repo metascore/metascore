@@ -46,17 +46,6 @@ module {
     ) : MStats.PublicInterface {
         public let games = GameRecord.fromStable(state);
 
-        public func putGameRecord(
-            gameID   : MPublic.GamePrincipal,
-            metadata : MPublic.Metadata, 
-            players  : [GameRecord.PlayerRecord],
-        ) {
-            games.put(gameID, {
-                metadata;
-                players = GameRecord.playersFromArray(players); 
-            });
-        };
-
         public func getPercentile(
             game    : MPublic.GamePrincipal,
             player  : MPublic.Player,

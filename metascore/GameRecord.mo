@@ -21,27 +21,6 @@ module {
         );
     };
 
-    public type Players = SMap.SortedValueMap<
-        MPublic.Player, // Player principal id.
-        PlayerRecord,   // Player state.
-    >;
-
-    public func emptyPlayers(n : Nat) : Players {
-        let playerCompare = func (a : PlayerRecord, b : PlayerRecord) : Order.Order {
-            Nat.compare(a.score, b.score);
-        };
-        SMap.SortedValueMap<MPublic.Player, PlayerRecord>(
-            n, Player.equal, Player.hash,
-            O.Descending(playerCompare),
-        );
-    };
-
-    // Internal representation of a player.
-    public type PlayerRecord = {
-        player : MPublic.Player; // Player principal id.
-        score  : Nat;            // Player score (not normalized!).
-    };
-
     // Internal representation of a game.
     public type GameRecord = {
         // Name of the game.
@@ -80,6 +59,27 @@ module {
         xs;
     };
 
+    public type Players = SMap.SortedValueMap<
+        MPublic.Player, // Player principal id.
+        PlayerRecord,   // Player state.
+    >;
+
+    public func emptyPlayers(n : Nat) : Players {
+        let playerCompare = func (a : PlayerRecord, b : PlayerRecord) : Order.Order {
+            Nat.compare(a.score, b.score);
+        };
+        SMap.SortedValueMap<MPublic.Player, PlayerRecord>(
+            n, Player.equal, Player.hash,
+            O.Descending(playerCompare),
+        );
+    };
+
+    // Internal representation of a player.
+    public type PlayerRecord = {
+        player : MPublic.Player; // Player principal id.
+        score  : Nat;            // Player score (not normalized!).
+    };
+
     public func playersFromArray(players : [PlayerRecord]) : Players {
         let ps = emptyPlayers(players.size());
         for (p in players.vals()) {
@@ -94,5 +94,47 @@ module {
             ps := Array.append(ps, [p]);
         };
         ps;
+    };
+
+    public type Metascore = Nat;
+
+    public type PlayerScores = SMap.SortedValueMap<
+        MPublic.Player,
+        PlayerGameScores,
+    >;
+
+    public func emptyPlayerScores(n : Nat) : PlayerScores {
+        func sum(playerScores : HashMap.HashMap<MPublic.GamePrincipal, Metascore>) : Metascore {
+            var score = 0;
+            for ((_, s) in playerScores.entries()) {
+                score += s;
+            };
+            score;
+        };
+        let playerScoresCompare = func (
+            a : PlayerGameScores,
+            b : PlayerGameScores,
+        ) : Order.Order {
+            Nat.compare(sum(a), sum(b));
+        };
+        SMap.SortedValueMap<
+            MPublic.Player,
+            PlayerGameScores,
+        >(
+            n, Player.equal, Player.hash,
+            O.Descending(playerScoresCompare),
+        );
+    };
+
+    public type PlayerGameScores = HashMap.HashMap<
+        MPublic.GamePrincipal,
+        Metascore,
+    >;
+
+    public func emptyPlayerGameScores(n : Nat) : PlayerGameScores {
+        HashMap.HashMap<
+            MPublic.GamePrincipal,
+            Metascore,
+        >(n, Principal.equal, Principal.hash);
     };
 };
