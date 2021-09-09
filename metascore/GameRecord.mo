@@ -104,18 +104,11 @@ module {
     >;
 
     public func emptyPlayerScores(n : Nat) : PlayerScores {
-        func sum(playerScores : HashMap.HashMap<MPublic.GamePrincipal, Metascore>) : Metascore {
-            var score = 0;
-            for ((_, s) in playerScores.entries()) {
-                score += s;
-            };
-            score;
-        };
         let playerScoresCompare = func (
             a : PlayerGameScores,
             b : PlayerGameScores,
         ) : Order.Order {
-            Nat.compare(sum(a), sum(b));
+            Nat.compare(totalScore(a), totalScore(b));
         };
         SMap.SortedValueMap<
             MPlayer.Player,
@@ -124,6 +117,14 @@ module {
             n, MPlayer.equal, MPlayer.hash,
             O.Descending(playerScoresCompare),
         );
+    };
+
+    public func totalScore(playerScores : PlayerGameScores) : Metascore {
+        var score = 0;
+        for ((_, s) in playerScores.entries()) {
+            score += s;
+        };
+        score;
     };
 
     public type PlayerGameScores = HashMap.HashMap<

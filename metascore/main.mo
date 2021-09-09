@@ -161,6 +161,20 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
                     metadata;
                     players = GameRecord.playersFromArray(players); 
                 });
+                for (p in players.vals()) {
+                    let pID = p.player;
+                    switch (scores.get(pID)) {
+                        case (null) {
+                            let ps = GameRecord.emptyPlayerGameScores(1);
+                            ps.put(gameID, state.getMetascore(gameID, pID));
+                            scores.put(pID, ps);
+                        };
+                        case (? ps) {
+                            ps.put(gameID, state.getMetascore(gameID, pID));
+                            scores.put(pID, ps);
+                        };
+                    };
+                };
             };
             case (? gr) {
                 let ps = gr.players;
@@ -172,22 +186,21 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
                     metadata = gr.metadata;
                     players  = ps;
                 });
+                for ((_, p) in ps.entries()) {
+                    let pID = p.player;
+                    switch (scores.get(pID)) {
+                        case (null) {
+                            let ps = GameRecord.emptyPlayerGameScores(1);
+                            ps.put(gameID, state.getMetascore(gameID, pID));
+                            scores.put(pID, ps);
+                        };
+                        case (? ps) {
+                            ps.put(gameID, state.getMetascore(gameID, pID));
+                            scores.put(pID, ps);
+                        };
+                    };
+                };
              };
-        };
-        Debug.print(debug_show(players.size()));
-        for (p in players.vals()) {
-            let pID = p.player;
-            switch (scores.get(pID)) {
-                case (null) {
-                    let ps = GameRecord.emptyPlayerGameScores(1);
-                    ps.put(gameID, state.getMetascore(gameID, pID));
-                    scores.put(pID, ps);
-                };
-                case (? ps) {
-                    ps.put(gameID, state.getMetascore(gameID, pID));
-                    scores.put(pID, ps);
-                };
-            };
         };
     };
 
@@ -219,6 +232,16 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
                 else             { #less;    };
             },
         );
+    };
+
+    public query func getTop(n : Nat) : async [MPublic.Score] {
+        var top : [MPublic.Score] = [];
+        for ((p, scores) in scores.entries()) {
+            top := Array.append<MPublic.Score>(top, [(
+                p, GameRecord.totalScore(scores)
+            )]);
+        };
+        top;
     };
 
     public query func getPercentile(

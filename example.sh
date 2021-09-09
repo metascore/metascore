@@ -66,6 +66,24 @@ check "Updates scores" "$(dfx canister call game sendNewScores "(vec { record { 
 check "Get Player1 metascore" "$(dfx canister call metascore getOverallMetascore "($player1)")" "(750_000_000_000 : nat)"
 check "Get Player2 metascore" "$(dfx canister call metascore getOverallMetascore "($player2)")" "(1_000_000_000_000 : nat)"
 
+echo ""
+
+check "Get top 10" "$(dfx canister call metascore getTop "(10)")" "(
+  vec {
+    record {
+      variant {
+        stoic = principal \"k4ltb-urk4m-kdfc4-a2sib-br5ub-gcnep-tkxt2-2oqqa-ldzj2-zvmyw-gqe\"
+      };
+      1_000_000_000_000 : nat;
+    };
+    record {
+      variant {
+        plug = principal \"ztlax-3lufm-ahpvx-36scg-7b4lf-m34dn-md7or-ltgjf-nhq4k-qqffn-oqe\"
+      };
+      750_000_000_000 : nat;
+    };
+  },
+)"
 
 bold "\n> TESTS ${GREEN}PASSED${NC}\n"
 
