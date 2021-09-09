@@ -9,8 +9,8 @@ shared ({caller = owner}) actor class Game() : async MPublic.GameInterface {
     public query func metascoreScores() : async [MPublic.Score] {
         Debug.print("Returning scores...");
         [
-            (#plug("playerPlug"), 10),
-            (#stoic("playerStoic"), 8),
+            (#plug(Principal.fromText("ztlax-3lufm-ahpvx-36scg-7b4lf-m34dn-md7or-ltgjf-nhq4k-qqffn-oqe")), 10),
+            (#stoic(Principal.fromText("k4ltb-urk4m-kdfc4-a2sib-br5ub-gcnep-tkxt2-2oqqa-ldzj2-zvmyw-gqe")), 8),
         ];
     };
 
