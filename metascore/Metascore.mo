@@ -7,7 +7,7 @@ import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 
 import GameRecord "GameRecord";
-import Player "Player";
+import MPlayer "../src/Player";
 import MPublic "../src/Metascore";
 import MStats "../src/Stats";
 
@@ -25,10 +25,10 @@ module {
 
         // PublicInterface (see public/Stats.mo).
 
-        getPercentile         : query (MPublic.GamePrincipal, MPublic.Player) -> async ?Float;
-        getRanking            : query (MPublic.GamePrincipal, MPublic.Player) -> async ?Nat;
-        getMetascore          : query (MPublic.GamePrincipal, MPublic.Player) -> async Nat;
-        getOverallMetascore   : query (MPublic.Player) -> async Nat;
+        getPercentile         : query (MPublic.GamePrincipal, MPlayer.Player) -> async ?Float;
+        getRanking            : query (MPublic.GamePrincipal, MPlayer.Player) -> async ?Nat;
+        getMetascore          : query (MPublic.GamePrincipal, MPlayer.Player) -> async Nat;
+        getOverallMetascore   : query (MPlayer.Player) -> async Nat;
         getGames              : query () -> async [MPublic.Metadata];
 
         // Internal Interface (used in main.mo).
@@ -48,7 +48,7 @@ module {
 
         public func getPercentile(
             game    : MPublic.GamePrincipal,
-            player  : MPublic.Player,
+            player  : MPlayer.Player,
         ) : ?Float {
             switch (games.get(game)) {
                 case (null) { null; };
@@ -66,7 +66,7 @@ module {
 
         public func getRanking(
             game    : MPublic.GamePrincipal,
-            player  : MPublic.Player,
+            player  : MPlayer.Player,
         ) : ?Nat {
             switch (games.get(game)) {
                 case (null) { null; };
@@ -81,7 +81,7 @@ module {
 
         public func getMetascore (
             game    : MPublic.GamePrincipal,
-            player  : MPublic.Player,
+            player  : MPlayer.Player,
         ) : Nat {
             // To drive people to try all games, 1/2 of points awarded for participation.
             var score : Float = 0.5;
@@ -108,7 +108,7 @@ module {
         };
 
         public func getOverallMetascore(
-            player  : MPublic.Player,
+            player  : MPlayer.Player,
         ) : Nat {
             var score : Nat = 0;
             for ((gID, _) in games.entries()) {

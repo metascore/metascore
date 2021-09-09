@@ -6,8 +6,8 @@ import Order "mo:base/Order";
 import Principal "mo:base/Principal";
 import SMap "mo:sorted/Map";
 
-import Player "Player";
 import MPublic "../src/Metascore";
+import MPlayer "../src/Player";
 
 module {
     public type Games = HashMap.HashMap<
@@ -26,7 +26,7 @@ module {
         // Name of the game.
         metadata : MPublic.Metadata;
         // List of players.
-        players : SMap.SortedValueMap<MPublic.Player, PlayerRecord>;
+        players : SMap.SortedValueMap<MPlayer.Player, PlayerRecord>;
     };
 
     // Stable version of a GameRecord.
@@ -60,7 +60,7 @@ module {
     };
 
     public type Players = SMap.SortedValueMap<
-        MPublic.Player, // Player principal id.
+        MPlayer.Player, // Player principal id.
         PlayerRecord,   // Player state.
     >;
 
@@ -68,16 +68,16 @@ module {
         let playerCompare = func (a : PlayerRecord, b : PlayerRecord) : Order.Order {
             Nat.compare(a.score, b.score);
         };
-        SMap.SortedValueMap<MPublic.Player, PlayerRecord>(
-            n, Player.equal, Player.hash,
+        SMap.SortedValueMap<MPlayer.Player, PlayerRecord>(
+            n, MPlayer.equal, MPlayer.hash,
             O.Descending(playerCompare),
         );
     };
 
     // Internal representation of a player.
     public type PlayerRecord = {
-        player : MPublic.Player; // Player principal id.
-        score  : Nat;            // Player score (not normalized!).
+        player : MPlayer.Player; // Player principal id.
+        score  : Nat;           // Player score (not normalized!).
     };
 
     public func playersFromArray(players : [PlayerRecord]) : Players {
@@ -99,7 +99,7 @@ module {
     public type Metascore = Nat;
 
     public type PlayerScores = SMap.SortedValueMap<
-        MPublic.Player,
+        MPlayer.Player,
         PlayerGameScores,
     >;
 
@@ -118,10 +118,10 @@ module {
             Nat.compare(sum(a), sum(b));
         };
         SMap.SortedValueMap<
-            MPublic.Player,
+            MPlayer.Player,
             PlayerGameScores,
         >(
-            n, Player.equal, Player.hash,
+            n, MPlayer.equal, MPlayer.hash,
             O.Descending(playerScoresCompare),
         );
     };

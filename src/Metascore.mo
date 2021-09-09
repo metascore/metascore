@@ -1,5 +1,7 @@
 import Result "mo:base/Result";
 
+import MPlayer "Player";
+
 module {
     // Just for readability.
     public type GamePrincipal = Principal;
@@ -29,16 +31,9 @@ module {
         // TODO: add more fields (e.g. genre, ...)
     };
 
-    // Represents a player.
-    // Supported: Stoic and Plug.
-    public type Player = {
-        #stoic : Principal;
-        #plug  : Principal;
-    };
-
     // Score of a player.
     public type Score = (
-        Player, // Wallet address of the player.
+        MPlayer.Player, // Wallet address of the player.
         Nat,    // Score of the player.
     );
 

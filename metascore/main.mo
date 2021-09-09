@@ -17,7 +17,7 @@ import Text "mo:base/Text";
 import GameRecord "GameRecord";
 import M "Metascore";
 import MPublic "../src/Metascore";
-import Player "Player";
+import MPlayer "../src/Player";
 
 import Debug "mo:base/Debug";
 
@@ -223,27 +223,27 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
 
     public query func getPercentile(
         game    : MPublic.GamePrincipal,
-        player  : MPublic.Player,
+        player  : MPlayer.Player,
     ) : async ?Float {
         state.getPercentile(game, player);
     };
 
     public query func getRanking(
         game    : MPublic.GamePrincipal,
-        player  : MPublic.Player,
+        player  : MPlayer.Player,
     ) : async ?Nat {
         state.getRanking(game, player);
     };
 
     public query func getMetascore(
         game    : MPublic.GamePrincipal,
-        player  : MPublic.Player,
+        player  : MPlayer.Player,
     ) : async Nat {
         state.getMetascore(game, player);
     };
 
     public query func getOverallMetascore(
-        player  : MPublic.Player,
+        player  : MPlayer.Player,
     ) : async Nat {
         state.getOverallMetascore(player);
     };
@@ -266,7 +266,7 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
                 switch (g.players.getValue(i)) {
                     case (null) {};
                     case (? p)  {
-                        text #= "<li>" # Player.toText(p.player) # "</li>";
+                        text #= "<li>" # MPlayer.toText(p.player) # "</li>";
                     };
                 };
             };
