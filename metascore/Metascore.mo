@@ -49,12 +49,11 @@ module {
         public func putGameRecord(
             gameID   : MPublic.GamePrincipal,
             metadata : MPublic.Metadata, 
-            scores   : [MPublic.Score],
+            players  : [GameRecord.PlayerRecord],
         ) {
             games.put(gameID, {
                 metadata;
-                rawScores     = scores;
-                playerRanking = GameRecord.scoresToRanking(scores);
+                players = GameRecord.playersFromArray(players); 
             });
         };
 
@@ -65,11 +64,11 @@ module {
             switch (games.get(game)) {
                 case (null) { null; };
                 case (? gc) {
-                    switch (gc.playerRanking.get(player)) {
+                    switch (gc.players.getIndex(player)) {
                         case (null) { null; };
-                        case (? r)  {
-                            let n = Float.fromInt(gc.playerRanking.size());
-                            ?((n - Float.fromInt(r - 1)) / n);
+                        case (? i)  {
+                            let n = Float.fromInt(gc.players.size());
+                            ?((n - Float.fromInt(i)) / n);
                         };
                     };
                 };
@@ -83,9 +82,9 @@ module {
             switch (games.get(game)) {
                 case (null) { null; };
                 case (? gc) {
-                    switch (gc.playerRanking.get(player)) {
-                        case (null) { null; };
-                        case (? r)  { ?r    };
+                    switch (gc.players.getIndex(player)) {
+                        case (null) { null;   };
+                        case (? r)  { ?(r+1); };
                     };
                 };
             };

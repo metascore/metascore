@@ -1,6 +1,7 @@
 on: 
   push:
     paths:
+      - 'src/**'
       - 'example.sh'
 jobs:
   deploy:

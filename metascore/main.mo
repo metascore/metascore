@@ -14,8 +14,6 @@ import Result "mo:base/Result";
 import Time "mo:base/Time";
 import Text "mo:base/Text";
 
-import Debug "mo:base/Debug";
-
 import GameRecord "GameRecord";
 import M "Metascore";
 import MPublic "../src/Metascore";
@@ -78,14 +76,19 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
 
     public func register(
         id : MPublic.GamePrincipal,
-    ) : async Result.Result<(), Text> {   
-        try {
-            let game : MPublic.GameInterface = actor(Principal.toText(id));
-            await game.metascoreRegisterSelf(registerGame);
-            #ok();
-        } catch (e) {
-            #err("Could not register game with principal ID: " # Principal.toText(id));
-        }
+    ) : async Result.Result<(), Text> {
+        switch (state.games.get(id)) {
+            case (? g)  { #ok(); };
+            case (null) {
+                try {
+                    let game : MPublic.GameInterface = actor(Principal.toText(id));
+                    await game.metascoreRegisterSelf(registerGame);
+                    #ok();
+                } catch (e) {
+                    #err("Could not register game with principal ID: " # Principal.toText(id));
+                };
+            };
+        };
     };
 
     public shared({caller}) func unregister(
@@ -110,7 +113,6 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
     public shared({caller}) func registerGame(
         metadata : MPublic.Metadata
     ) : async () {
-        Debug.print("Registering " # metadata.name # " (" # Principal.toText(caller) # ")...");
         let scores = await getScores(caller);
         state.putGameRecord(caller, metadata, scores);
     };
@@ -130,20 +132,24 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
     };
 
     private func queryAllScores() : async () {
-        Debug.print("Getting scores...");
         for ((gID, g) in state.games.entries()) {
             let scores = await getScores(gID);
             state.putGameRecord(gID, g.metadata, scores);
         };
     };
 
-    private func getScores(id : MPublic.GamePrincipal) : async [MPublic.Score] {
+    private func getScores(id : MPublic.GamePrincipal) : async [GameRecord.PlayerRecord] {
         let game : MPublic.GameInterface = actor(Principal.toText(id));
-        Array.sort(
-            await game.metascoreScores(),
+        Array.sort<GameRecord.PlayerRecord>(
+            Array.map<MPublic.Score, GameRecord.PlayerRecord>(
+                await game.metascoreScores(),
+                func ((player, score) : MPublic.Score) : GameRecord.PlayerRecord {
+                    { player; score; };
+                },
+            ),
             // Sort from high to low.
-            func (a : MPublic.Score, b : MPublic.Score) : Order.Order {
-                let (x, y) = (a.1, b.1);
+            func (a : GameRecord.PlayerRecord, b : GameRecord.PlayerRecord) : Order.Order {
+                let (x, y) = (a.score, b.score);
                 if      (x < y)  { #greater; }
                 else if (x == y) { #equal;   }
                 else             { #less;    };
@@ -185,18 +191,25 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
     public query func http_request(
         r : AssetStorage.HttpRequest,
     ) : async AssetStorage.HttpResponse {
-        var text = "<h1>Hello world!</h1>";
+        var text = "<html><title>Metascore</title><body>";
+        text #= "<h1>Hello world!</h1>";
         for ((gID, g) in state.games.entries()) {
             text #= "<div>";
             text #= "<h2>" # g.metadata.name # " (" # Principal.toText(gID) # ")</h2>";
             text #= "<h3>Top 3</h3>";
             text #= "<ol>";
-            for (i in Iter.range(0, Nat.min(2, g.rawScores.size() - 1))) {
-                text #= "<li>" # Player.toText(g.rawScores[i].0) # "</li>";
+            for (i in Iter.range(0, 2)) {
+                switch (g.players.getValue(i)) {
+                    case (null) {};
+                    case (? p)  {
+                        text #= "<li>" # Player.toText(p.player) # "</li>";
+                    };
+                };
             };
             text #= "</ol>";
             text #= "</div>";
         };
+        text #= "</body></html>";
         {
             body               = Blob.toArray(Text.encodeUtf8(text));
             headers            = [("Content-Type", "text/html; charset=UTF-8")];

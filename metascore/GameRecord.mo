@@ -1,6 +1,10 @@
 import Array "mo:base/Array";
 import HashMap "mo:base/HashMap";
+import Nat "mo:base/Nat";
+import O "mo:sorted/Order";
+import Order "mo:base/Order";
 import Principal "mo:base/Principal";
+import SMap "mo:sorted/Map";
 
 import Player "Player";
 import MPublic "../src/Metascore";
@@ -11,52 +15,53 @@ module {
         GameRecord,            // Game state.
     >;
 
-    public func empty(n : Nat) : Games {
-        HashMap.HashMap<MPublic.GamePrincipal, GameRecord>(n, Principal.equal, Principal.hash);
+    public func emptyGames(n : Nat) : Games {
+        HashMap.HashMap<MPublic.GamePrincipal, GameRecord>(
+            n, Principal.equal, Principal.hash,
+        );
     };
 
-    public type Ranking = HashMap.HashMap<MPublic.Player, Nat>;
+    public type Players = SMap.SortedValueMap<
+        MPublic.Player, // Player principal id.
+        PlayerRecord,   // Player state.
+    >;
 
-    public func emptyRanking(n : Nat) : Ranking {
-        HashMap.HashMap<MPublic.Player, Nat>(n, Player.equal, Player.hash);
+    public func emptyPlayers(n : Nat) : Players {
+        let playerCompare = func (a : PlayerRecord, b : PlayerRecord) : Order.Order {
+            Nat.compare(a.score, b.score);
+        };
+        SMap.SortedValueMap<MPublic.Player, PlayerRecord>(
+            n, Player.equal, Player.hash,
+            O.Descending(playerCompare),
+        );
+    };
+
+    // Internal representation of a player.
+    public type PlayerRecord = {
+        player : MPublic.Player; // Player principal id.
+        score  : Nat;            // Player score (not normalized!).
     };
 
     // Internal representation of a game.
     public type GameRecord = {
         // Name of the game.
         metadata : MPublic.Metadata;
-        // The raw scores of the game.
-        // TODO: use data structure to avoid duplicates and efficient updates.
-        rawScores : [MPublic.Score];
-        // Calculated ranking (1st..) of every player. Should always be up to
-        // date (will be updates together with raw scores).
-        playerRanking : Ranking;
+        // List of players.
+        players : SMap.SortedValueMap<MPublic.Player, PlayerRecord>;
     };
 
-    // Stable version of a GameRecord;
+    // Stable version of a GameRecord.
     public type GameRecordStable = (
-        MPublic.GamePrincipal,               // Game principal ID.
-        (MPublic.Metadata, [MPublic.Score]), // Game metadata and scores.
+        MPublic.GamePrincipal,              // Game principal ID.
+        (MPublic.Metadata, [PlayerRecord]), // Game metadata and scores.
     );
 
-    // Converts scores to a map of rankings.
-    // Assumes that the incoming scores are sorted (high to low).
-    public func scoresToRanking(scores : [MPublic.Score]) : HashMap.HashMap<MPublic.Player, Nat> {
-        let m = emptyRanking(scores.size());
-        for (i in scores.keys()) {
-            let (p, _) = scores[i];
-            m.put(p, i + 1);
-        };
-        m;
-    };
-
     public func fromStable(records : [GameRecordStable]) : Games {
-        let xs = empty(records.size());
-        for ((gID, (metadata, scores)) in records.vals()) {
-            xs.put(gID, {
+        let xs = emptyGames(records.size());
+        for ((gameID, (metadata, players)) in records.vals()) {
+            xs.put(gameID, {
                 metadata;
-                rawScores      = scores;
-                playerRanking  = scoresToRanking(scores);
+                players = playersFromArray(players);
             });
         };
         xs;
@@ -66,10 +71,28 @@ module {
         var xs : [GameRecordStable] = [];
         for ((gID, r) in records.entries()) {
             xs := Array.append<GameRecordStable>(xs, [(
-                gID,
-                (r.metadata, r.rawScores),
+                gID, (
+                    r.metadata, 
+                    playersToArray(r.players),
+                ),
             )]);
         };
         xs;
+    };
+
+    public func playersFromArray(players : [PlayerRecord]) : Players {
+        let ps = emptyPlayers(players.size());
+        for (p in players.vals()) {
+            ps.put(p.player, p);
+        };
+        ps;
+    };
+
+    public func playersToArray(players : Players) : [PlayerRecord] {
+        var ps : [PlayerRecord] = [];
+        for ((_, p) in players.entries()) {
+            ps := Array.append(ps, [p]);
+        };
+        ps;
     };
 };
