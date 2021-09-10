@@ -6,45 +6,20 @@ import Iter "mo:base/Iter";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 
-import GameRecord "GameRecord";
+import GR "GameRecord";
 import MPlayer "../src/Player";
 import MPublic "../src/Metascore";
 import MStats "../src/Stats";
 
 // This module is for internal use and should never be imported somewhere other
-// than 'main.mo';
+// than 'main.mo'.
 module {
-    // NOTE: make sure this is updated! Ensures some compiler checks. ~ quint
-    public type FullInterface = actor {
-        // MetascoreInterface (see public/Metascore.mo).
-
-        register    : shared (MPublic.GamePrincipal) -> async Result.Result<(), Text>;
-        // @auth: admin
-        unregister  : shared (MPublic.GamePrincipal) -> async ();
-        scoreUpdate : shared ([MPublic.Score])       -> async ();
-
-        // PublicInterface (see public/Stats.mo).
-
-        getPercentile         : query (MPublic.GamePrincipal, MPlayer.Player) -> async ?Float;
-        getRanking            : query (MPublic.GamePrincipal, MPlayer.Player) -> async ?Nat;
-        getMetascore          : query (MPublic.GamePrincipal, MPlayer.Player) -> async Nat;
-        getOverallMetascore   : query (MPlayer.Player) -> async Nat;
-        getGames              : query () -> async [MPublic.Metadata];
-
-        // Internal Interface (used in main.mo).
-
-        // @auth: admin
-        cron : shared () -> async ();
-        registerGame : shared MPublic.Metadata -> async ();
-        // TODO: add functions whenever it is public.
-    };
-
     // Internal class to keep track of data within the Metascore canister.
     // Used to keep the 'main.mo' file at a minimum.
     public class Metascore(
-        state : [GameRecord.GameRecordStable],
+        state : [GR.GameRecordStable],
     ) : MStats.PublicInterface {
-        public let games = GameRecord.fromStable(state);
+        public let games = GR.fromStable(state);
 
         public func getPercentile(
             game    : MPublic.GamePrincipal,

@@ -14,23 +14,26 @@ import Result "mo:base/Result";
 import Time "mo:base/Time";
 import Text "mo:base/Text";
 
-import GameRecord "GameRecord";
+import GR "GameRecord";
+import Interface "Interface";
 import M "Metascore";
+import PR "PlayerRecord";
+
 import MPublic "../src/Metascore";
 import MPlayer "../src/Player";
 
-import Debug "mo:base/Debug";
-
-shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
+shared ({caller = owner}) actor class Metascore() : async Interface.FullInterface {
     // Time since last cron call.
     private stable var lastCron : Int = Time.now();
+
     // Map of registered game canisters.
-    private var games : [GameRecord.GameRecordStable] = [];
+    private var games : [GR.GameRecordStable] = [];
     private let state = M.Metascore(games);
-    private let scores = GameRecord.emptyPlayerScores(games.size());
+    // Map of player scores.
+    private let scores = PR.emptyPlayerScores(games.size());
 
     system func preupgrade() {
-        games := GameRecord.toStable(state.games);
+        games := GR.toStable(state.games);
     };
 
     system func postupgrade() {
@@ -39,7 +42,7 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
                 let pID = p.player;
                 switch (scores.get(pID)) {
                     case (null) {
-                        let ps = GameRecord.emptyPlayerGameScores(1);
+                        let ps = PR.emptyPlayerGameScores(1);
                         ps.put(gID, state.getMetascore(gID, pID));
                         scores.put(pID, ps);
                     };
@@ -93,6 +96,9 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
         return false;
     };
 
+    // Register a new game. The metascore canister will check whether the given
+    // principal ID (canister) implements the Metascore game interface. If so,
+    // it will query the metascoreRegisterSelf endpoint.
     public func register(
         id : MPublic.GamePrincipal,
     ) : async Result.Result<(), Text> {
@@ -110,6 +116,15 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
         };
     };
 
+    // Callback that gets passed by the register endpoint.
+    public shared({caller}) func registerGame(
+        metadata : MPublic.Metadata
+    ) : async () {
+        let scores = await getScores(caller);
+        putGameRecord(caller, metadata, scores);
+    };
+
+    // Allows owners and games to unregister games/themselves.
     public shared({caller}) func unregister(
         id : MPublic.GamePrincipal,
     ) : async () {
@@ -117,23 +132,21 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
         state.games.delete(id);
     };
 
+    // Allows games to send score updates. These updates don't need to be the
+    // full leaderboard, but can only contain new/updated scores. The whole
+    // leaderboard will occasionally get queried on the metascoreScores endpoint.
     public shared({caller}) func scoreUpdate(
         scores : [MPublic.Score],
     ) : async() {
         switch (state.games.get(caller)) {
-            // Means that the caller was not the game canister itself.
-            case (null) {};
+            case (null) {
+                // Means that the caller was not the game canister itself.
+                assert(false);
+            };
             case (? g)  {
                 putGameRecord(caller, g.metadata, sortScores(scores));
             };
         };
-    };
-
-    public shared({caller}) func registerGame(
-        metadata : MPublic.Metadata
-    ) : async () {
-        let scores = await getScores(caller);
-        putGameRecord(caller, metadata, scores);
     };
 
     private let sec = 1_000_000_000;
@@ -150,25 +163,39 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
         };
     };
 
+    // Gets all scores form every game.
+    // Currently only used by the cron.
+    private func queryAllScores() : async () {
+        for ((gID, g) in state.games.entries()) {
+            let scores = await getScores(gID);
+            putGameRecord(gID, g.metadata, scores);
+        };
+    };
+
     private func putGameRecord(
         gameID   : MPublic.GamePrincipal,
         metadata : MPublic.Metadata,
-        players  : [GameRecord.PlayerRecord],
+        players  : [PR.PlayerRecord],
     ) {
         switch (state.games.get(gameID)) {
+            // Game has no scores yet.
             case (null) {
+                // Add scores to state.
                 state.games.put(gameID, {
                     metadata;
-                    players = GameRecord.playersFromArray(players); 
+                    players = PR.playersFromArray(players); 
                 });
+                // Store individual player scores.
                 for (p in players.vals()) {
                     let pID = p.player;
                     switch (scores.get(pID)) {
+                        // Create new player, if no scores yet.
                         case (null) {
-                            let ps = GameRecord.emptyPlayerGameScores(1);
+                            let ps = PR.emptyPlayerGameScores(1);
                             ps.put(gameID, state.getMetascore(gameID, pID));
                             scores.put(pID, ps);
                         };
+                        // Update scores for game.
                         case (? ps) {
                             ps.put(gameID, state.getMetascore(gameID, pID));
                             scores.put(pID, ps);
@@ -176,7 +203,9 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
                     };
                 };
             };
+            // Update existing game scores.
             case (? gr) {
+                // Update game state by updating previous player state.
                 let ps = gr.players;
                 for (p in players.vals()) {
                     let pID = p.player;
@@ -186,14 +215,17 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
                     metadata = gr.metadata;
                     players  = ps;
                 });
+                // Update individual player scores.
                 for ((_, p) in ps.entries()) {
                     let pID = p.player;
+                    // Create new player, if no scores yet.
                     switch (scores.get(pID)) {
                         case (null) {
-                            let ps = GameRecord.emptyPlayerGameScores(1);
+                            let ps = PR.emptyPlayerGameScores(1);
                             ps.put(gameID, state.getMetascore(gameID, pID));
                             scores.put(pID, ps);
                         };
+                        // Update scores for game.
                         case (? ps) {
                             ps.put(gameID, state.getMetascore(gameID, pID));
                             scores.put(pID, ps);
@@ -204,28 +236,22 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
         };
     };
 
-    private func queryAllScores() : async () {
-        for ((gID, g) in state.games.entries()) {
-            let scores = await getScores(gID);
-            putGameRecord(gID, g.metadata, scores);
-        };
-    };
-
-    private func getScores(id : MPublic.GamePrincipal) : async [GameRecord.PlayerRecord] {
+    // Get all scores of a specific game. Returns a list of sorted scores (high to low).
+    private func getScores(id : MPublic.GamePrincipal) : async [PR.PlayerRecord] {
         let game : MPublic.GameInterface = actor(Principal.toText(id));
         sortScores(await game.metascoreScores());
     };
 
-    private func sortScores(scores : [MPublic.Score]) : [GameRecord.PlayerRecord] {
-        Array.sort<GameRecord.PlayerRecord>(
-            Array.map<MPublic.Score, GameRecord.PlayerRecord>(
+    private func sortScores(scores : [MPublic.Score]) : [PR.PlayerRecord] {
+        Array.sort<PR.PlayerRecord>(
+            Array.map<MPublic.Score, PR.PlayerRecord>(
                 scores,
-                func ((player, score) : MPublic.Score) : GameRecord.PlayerRecord {
+                func ((player, score) : MPublic.Score) : PR.PlayerRecord {
                     { player; score; };
                 },
             ),
             // Sort from high to low.
-            func (a : GameRecord.PlayerRecord, b : GameRecord.PlayerRecord) : Order.Order {
+            func (a : PR.PlayerRecord, b : PR.PlayerRecord) : Order.Order {
                 let (x, y) = (a.score, b.score);
                 if      (x < y)  { #greater; }
                 else if (x == y) { #equal;   }
@@ -234,16 +260,20 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
         );
     };
 
+    // Return the top n players. Can return less if the number of players is
+    // less than n.
     public query func getTop(n : Nat) : async [MPublic.Score] {
         var top : [MPublic.Score] = [];
         for ((p, scores) in scores.entries()) {
             top := Array.append<MPublic.Score>(top, [(
-                p, GameRecord.totalScore(scores)
+                p, PR.totalScore(scores)
             )]);
         };
         top;
     };
 
+    // Returns the percentile of a player in a specific game.
+    // Null gets return if the player has no score for that game.
     public query func getPercentile(
         game    : MPublic.GamePrincipal,
         player  : MPlayer.Player,
@@ -251,6 +281,8 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
         state.getPercentile(game, player);
     };
 
+    // Returns the ranking of a player in a specific game (1-index based).
+    // Null gets return if the player has no score for that game.
     public query func getRanking(
         game    : MPublic.GamePrincipal,
         player  : MPlayer.Player,
@@ -258,6 +290,8 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
         state.getRanking(game, player);
     };
 
+    // Returns the metascore of a player in a specific game ([0-1T] points).
+    // 0 gets return if the player has no score for that game.
     public query func getMetascore(
         game    : MPublic.GamePrincipal,
         player  : MPlayer.Player,
@@ -265,12 +299,14 @@ shared ({caller = owner}) actor class Metascore() : async M.FullInterface {
         state.getMetascore(game, player);
     };
 
+    // Returns the cumulative metascore of a player.
     public query func getOverallMetascore(
         player  : MPlayer.Player,
     ) : async Nat {
         state.getOverallMetascore(player);
     };
 
+    // Returns the list of registered games.
     public query func getGames() : async [MPublic.Metadata] {
         state.getGames();
     };
