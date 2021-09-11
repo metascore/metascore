@@ -6,6 +6,11 @@ let additions = [
   , repo = "https://github.com/aviate-labs/asset-storage.mo"
   , version = "asset-storage-0.7.0"
   , dependencies = ["base"]
+  },
+  { name = "sorted"
+  , repo = "https://github.com/aviate-labs/sorted.mo"
+  , version = "v0.1.2"
+  , dependencies = ["base"]
   }
 ] : List Package
 
