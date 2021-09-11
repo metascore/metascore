@@ -2,6 +2,7 @@ import Array "mo:base/Array";
 import AssetStorage "mo:http/AssetStorage";
 import Blob "mo:base/Blob";
 import Float "mo:base/Float";
+import Error "mo:base/Error";
 import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
 import Int "mo:base/Int";
@@ -110,7 +111,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
                     await game.metascoreRegisterSelf(registerGame);
                     #ok();
                 } catch (e) {
-                    #err("Could not register game with principal ID: " # Principal.toText(id));
+                    #err("Could not register game with principal ID: " # Principal.toText(id) # " (" # Error.message(e) # ")");
                 };
             };
         };
