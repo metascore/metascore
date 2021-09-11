@@ -40,7 +40,7 @@ check "Check if owner is admin" \
 
 check "Register invalid game" "$(dfx canister call metascore register "(principal \"lgncu-2qaaa-aaaah-qadfa-cai\")")" "(
   variant {
-    err = \"Could not register game with principal ID: lgncu-2qaaa-aaaah-qadfa-cai\"
+    err = \"Could not register game with principal ID: lgncu-2qaaa-aaaah-qadfa-cai (Canister lgncu-2qaaa-aaaah-qadfa-cai does not exist)\"
   },
 )"
 
