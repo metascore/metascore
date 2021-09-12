@@ -1,0 +1,27 @@
+{
+  "name": "@metascore/query-staging",
+  "version": "0.0.12",
+  "description": "Public interface for querying Metascore staging canister.",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "declarations": "rsync -avr .dfx/local/canisters/metascore/* --exclude='assets/' --exclude='idl/' --exclude='*.wasm' --delete npm/generated"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/metascore/metascore.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/metascore/metascore/issues"
+  },
+  "homepage": "https://github.com/metascore/metascore#readme",
+  "dependencies": {
+    "@metascore/query-staging": "^0.0.12",
+    "@dfinity/agent": "0.10.0",
+    "@dfinity/candid": "0.10.0",
+    "@dfinity/principal": "0.10.0",
+    "npm": "^7.23.0"
+  }
+}
