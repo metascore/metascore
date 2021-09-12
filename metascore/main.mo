@@ -321,16 +321,17 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
             text #= "<div>";
             text #= "<h2>" # g.metadata.name # " (" # Principal.toText(gID) # ")</h2>";
             text #= "<h3>Top 3</h3>";
-            text #= "<ol>";
+            text #= "<dl>";
             for (i in Iter.range(0, 2)) {
                 switch (g.players.getValue(i)) {
                     case (null) {};
                     case (? p)  {
-                        text #= "<li>" # MPlayer.toText(p.player) # "</li>";
+                        text #= "<dt>" # MPlayer.toText(p.player) # "</dt>";
+                        text #= "<dd>" # Nat.toText(p.score) # "</dd>";
                     };
                 };
             };
-            text #= "</ol>";
+            text #= "</dl>";
             text #= "</div>";
         };
         text #= "</body></html>";
