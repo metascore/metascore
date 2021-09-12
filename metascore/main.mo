@@ -28,7 +28,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     private stable var lastCron : Int = Time.now();
 
     // Map of registered game canisters.
-    private var games : [GR.GameRecordStable] = [];
+    private stable var games : [GR.GameRecordStable] = [];
     private let state = M.Metascore(games);
     // Map of player scores.
     private let scores = PR.emptyPlayerScores(games.size());
