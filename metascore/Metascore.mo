@@ -92,10 +92,10 @@ module {
             score;
         };
 
-        public func getGames() : [MPublic.Metadata] {
-            var md : [MPublic.Metadata] = [];
-            for ((_, g) in games.entries()) {
-                md := Array.append(md, [g.metadata]);
+        public func getGames() : [(MPublic.GamePrincipal, MPublic.Metadata)] {
+            var md : [(MPublic.GamePrincipal, MPublic.Metadata)] = [];
+            for ((p, g) in games.entries()) {
+                md := Array.append(md, [(p, g.metadata)]);
             };
             md;
         };

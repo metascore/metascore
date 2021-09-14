@@ -308,7 +308,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     };
 
     // Returns the list of registered games.
-    public query func getGames() : async [MPublic.Metadata] {
+    public query func getGames() : async [(MPublic.GamePrincipal, MPublic.Metadata)] {
         state.getGames();
     };
 
