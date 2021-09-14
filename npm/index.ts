@@ -1,13 +1,15 @@
 import { Actor, ActorConfig, HttpAgent, HttpAgentOptions } from "@dfinity/agent";
 import { idlFactory } from './generated';
 import {
+    Metascore,
+} from './generated/metascore.did.js';
+import type {
     GamePrincipal,
     Metadata,
-    Metascore,
     Player,
     Result,
     Score,
-} from './generated/metascore.did.js';
+} from './generated/metascore.did.d';
 
 const STAGING_PRINCIPAL = 'rl4ub-oqaaa-aaaah-qbi3a-cai';
 
@@ -30,7 +32,7 @@ interface MetascoreQuery {
     getGames: Metascore['getGames'];
 };
 
-const queryIdlFactory = ({ IDL }) => {
+const queryIdlFactory = ({ IDL } : any) => {
     const base = idlFactory({ IDL });
     return IDL.Service({
         getGames: base.getGames,
