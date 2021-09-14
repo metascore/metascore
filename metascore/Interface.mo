@@ -20,7 +20,7 @@ module {
         getRanking            : query (MPublic.GamePrincipal, MPlayer.Player) -> async ?Nat;
         getMetascore          : query (MPublic.GamePrincipal, MPlayer.Player) -> async Nat;
         getOverallMetascore   : query (MPlayer.Player)                        -> async Nat;
-        getGames              : query ()                                      -> async [MPublic.Metadata];
+        getGames              : query ()                                      -> async [(MPublic.GamePrincipal, MPublic.Metadata)];
         getTop                : query (n : Nat)                               -> async [MPublic.Score];
 
         // Internal Interface (used in main.mo).
