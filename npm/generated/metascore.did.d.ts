@@ -13,7 +13,11 @@ export interface HttpResponse {
   'streaming_strategy' : [] | [StreamingStrategy],
   'status_code' : number,
 }
-export interface Metadata { 'name' : string }
+export interface Metadata {
+  'name' : string,
+  'playUrl' : string,
+  'flavorText' : [] | [string],
+}
 export interface Metascore {
   'addAdmin' : (arg_0: Principal) => Promise<undefined>,
   'cron' : () => Promise<undefined>,
