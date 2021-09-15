@@ -17,5 +17,13 @@ module {
         getGames : () -> [(MPublic.GamePrincipal, MPublic.Metadata)];
         // Returns a list of scores for a game.
         getGameScores : (MPublic.GamePrincipal, ?Nat, ?Nat) -> [MPublic.Score];
+        // Returns a list of metascores.
+        getMetascores : (?Nat, ?Nat) -> [Nat];
+        // Returns metascore at given percentile.
+        getPercentileMetascore : (Float) -> Nat;
+        // Returns total number of players.
+        getPlayerCount : () -> Nat;
+        // Returns total number of scores.
+        getScoreCount : () -> Nat;
     };
 };

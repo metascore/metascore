@@ -122,5 +122,31 @@ module {
                 };
             };
         };
+
+        public func getMetascores (
+            count : ?Nat,
+            offset : ?Nat,
+        ) : [Nat] {
+            // TODO: We need a Metascore data structure, then make this.
+            [];
+        };
+
+        public func getPercentileMetascore (
+            percentile : Float,
+        ) : Nat {
+            // TODO: We need a Metascore data structure, then make this.
+            // Should return the metascore at the given percentile.
+            1;
+        };
+
+        public func getPlayerCount() : Nat {
+            // TODO: Develop a simple counter for this;
+            1;
+        };
+
+        public func getScoreCount() : Nat {
+            // TODO: Develop a simple counter for this;
+            1;
+        };
     };
 }

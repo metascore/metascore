@@ -31,7 +31,15 @@ interface MetascoreQuery {
     // Returns a list of all games.
     getGames: Metascore['getGames'];
     // Returns scores for a game.
-    getGamesScores: Metascore['getGameScores'];
+    getGameScores: Metascore['getGameScores'];
+    // Returns total number of scores.
+    getScoreCount: Metascore['getScoreCount'];
+    // Returns total number of players.
+    getPlayerCount: Metascore['getPlayerCount'];
+    // Returns metascore for given percentil.
+    getPercentileMetascore: Metascore['getPercentileMetascore'];
+    // Returns list of overall metascores.
+    getMetascores: Metascore['getMetascores'];
 };
 
 const queryIdlFactory = ({ IDL } : any) => {
