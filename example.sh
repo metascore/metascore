@@ -49,8 +49,8 @@ check "Register game" "$(dfx canister call game register "(principal \"$metascor
 check "Get games" "$(dfx canister call metascore getGames)" "(
   vec {
     record {
-      principal "ryjl3-tyaaa-aaaaa-aaaba-cai";
-      record { name = "Saga Tarot" };
+      principal \"ryjl3-tyaaa-aaaaa-aaaba-cai\";
+      record { name = \"Saga Tarot\" };
     };
   },
 )"
