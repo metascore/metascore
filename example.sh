@@ -46,7 +46,18 @@ check "Register invalid game" "$(dfx canister call metascore register "(principa
 
 check "Register game" "$(dfx canister call game register "(principal \"$metascoreID\")")" "(variant { ok })"
 
-check "Get games" "$(dfx canister call metascore getGames)" "(vec { record { name = \"Saga Tarot\" } })"
+check "Get games" "$(dfx canister call metascore getGames)" "(
+  vec {
+    record {
+      principal \"ryjl3-tyaaa-aaaaa-aaaba-cai\";
+      record {
+        name = \"Saga Tarot\";
+        playUrl = \"https://l2jyf-nqaaa-aaaah-qadha-cai.raw.ic0.app/\";
+        flavorText = opt \"A tarot card game.\";
+      };
+    };
+  },
+)"
 
 echo ""
 

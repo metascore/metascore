@@ -37,6 +37,8 @@ shared ({caller = owner}) actor class Game() : async MPublic.GameInterface = thi
 
         await callback({
             name = "Saga Tarot";
+            playUrl = "https://l2jyf-nqaaa-aaaah-qadha-cai.raw.ic0.app/";
+            flavorText = ?"A tarot card game.";
         });
     };
 
