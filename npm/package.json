@@ -1,6 +1,6 @@
 {
   "name": "@metascore/query",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Public interface for querying Metascore staging canister.",
   "main": "index.ts",
   "scripts": {
@@ -18,7 +18,7 @@
   },
   "homepage": "https://github.com/metascore/metascore#readme",
   "dependencies": {
-    "@metascore/query": "^0.0.2",
+    "@metascore/query": "^0.0.3",
     "@dfinity/agent": "0.10.0",
     "@dfinity/candid": "0.10.0",
     "@dfinity/principal": "0.10.0",

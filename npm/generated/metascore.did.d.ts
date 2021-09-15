@@ -21,6 +21,11 @@ export interface Metadata {
 export interface Metascore {
   'addAdmin' : (arg_0: Principal) => Promise<undefined>,
   'cron' : () => Promise<undefined>,
+  'getGameScores' : (
+      arg_0: GamePrincipal,
+      arg_1: [] | [bigint],
+      arg_2: [] | [bigint],
+    ) => Promise<Array<Score>>,
   'getGames' : () => Promise<Array<[GamePrincipal, Metadata]>>,
   'getMetascore' : (arg_0: GamePrincipal, arg_1: Player) => Promise<bigint>,
   'getOverallMetascore' : (arg_0: Player) => Promise<bigint>,
