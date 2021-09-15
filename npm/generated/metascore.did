@@ -54,7 +54,12 @@ type Metascore =
    scoreUpdate: (vec Score) -> ();
    unregister: (GamePrincipal) -> ();
  };
-type Metadata = record {name: text;};
+type Metadata = 
+ record {
+   flavorText: opt text;
+   name: text;
+   playUrl: text;
+ };
 type HttpResponse = 
  record {
    body: vec nat8;

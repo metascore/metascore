@@ -1,6 +1,10 @@
 export const idlFactory = ({ IDL }) => {
   const GamePrincipal = IDL.Principal;
-  const Metadata = IDL.Record({ 'name' : IDL.Text });
+  const Metadata = IDL.Record({
+    'name' : IDL.Text,
+    'playUrl' : IDL.Text,
+    'flavorText' : IDL.Opt(IDL.Text),
+  });
   const Player = IDL.Variant({
     'plug' : IDL.Principal,
     'stoic' : IDL.Principal,
