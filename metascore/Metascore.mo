@@ -3,6 +3,7 @@ import Float "mo:base/Float";
 import HashMap "mo:base/HashMap";
 import Int "mo:base/Int";
 import Iter "mo:base/Iter";
+import Option "mo:base/Option";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 
@@ -98,6 +99,28 @@ module {
                 md := Array.append(md, [(p, g.metadata)]);
             };
             md;
+        };
+
+        public func getGameScores (
+            game : MPublic.GamePrincipal,
+            count : ?Nat,
+            offset : ?Nat,
+        ) : [MPublic.Score] {
+            let c : Nat = Option.get<Nat>(count, 100);
+            let o : Nat = Option.get<Nat>(offset, 0);
+            var result : [MPublic.Score] = [];
+            switch (games.get(game)) {
+                case (null) { []; };
+                case (? gc) {
+                    label l for (i in Iter.range(o, o + c)) {
+                        switch (gc.players.getValue(i)) {
+                            case null break l;
+                            case (?p) result := Array.append(result, [(p.player, p.score)]);
+                        };
+                    };
+                    result;
+                };
+            };
         };
     };
 }

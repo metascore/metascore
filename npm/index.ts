@@ -30,6 +30,8 @@ interface MetascoreQuery {
     getOverallMetascore: Metascore['getOverallMetascore'];
     // Returns a list of all games.
     getGames: Metascore['getGames'];
+    // Returns scores for a game.
+    getGamesScores: Metascore['getGameScores'];
 };
 
 const queryIdlFactory = ({ IDL } : any) => {

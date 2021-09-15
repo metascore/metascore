@@ -15,5 +15,7 @@ module {
         getOverallMetascore : (MPlayer.Player) -> Nat;
         // Returns a list of all games.
         getGames : () -> [(MPublic.GamePrincipal, MPublic.Metadata)];
+        // Returns a list of scores for a game.
+        getGameScores : (MPublic.GamePrincipal, ?Nat, ?Nat) -> [MPublic.Score];
     };
 };

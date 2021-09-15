@@ -1,15 +1,15 @@
 export const idlFactory = ({ IDL }) => {
   const GamePrincipal = IDL.Principal;
-  const Metadata = IDL.Record({
-    'name' : IDL.Text,
-    'playUrl' : IDL.Text,
-    'flavorText' : IDL.Opt(IDL.Text),
-  });
   const Player = IDL.Variant({
     'plug' : IDL.Principal,
     'stoic' : IDL.Principal,
   });
   const Score = IDL.Tuple(Player, IDL.Nat);
+  const Metadata = IDL.Record({
+    'name' : IDL.Text,
+    'playUrl' : IDL.Text,
+    'flavorText' : IDL.Opt(IDL.Text),
+  });
   const HeaderField = IDL.Tuple(IDL.Text, IDL.Text);
   const HttpRequest = IDL.Record({
     'url' : IDL.Text,
@@ -47,6 +47,11 @@ export const idlFactory = ({ IDL }) => {
   const Metascore = IDL.Service({
     'addAdmin' : IDL.Func([IDL.Principal], [], []),
     'cron' : IDL.Func([], [], []),
+    'getGameScores' : IDL.Func(
+        [GamePrincipal, IDL.Opt(IDL.Nat), IDL.Opt(IDL.Nat)],
+        [IDL.Vec(Score)],
+        ['query'],
+      ),
     'getGames' : IDL.Func(
         [],
         [IDL.Vec(IDL.Tuple(GamePrincipal, Metadata))],

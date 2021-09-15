@@ -312,6 +312,15 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         state.getGames();
     };
 
+    // Returns a list of scores for a game.
+    public query func getGameScores(
+        game    : MPublic.GamePrincipal,
+        count   : ?Nat,
+        offset  : ?Nat
+    ) : async [MPublic.Score] {
+        state.getGameScores(game, count, offset);
+    };
+
     public query func http_request(
         r : AssetStorage.HttpRequest,
     ) : async AssetStorage.HttpResponse {
