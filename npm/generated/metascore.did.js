@@ -1,6 +1,6 @@
 export const idlFactory = ({ IDL }) => {
-  const Metadata = IDL.Record({ 'name' : IDL.Text });
   const GamePrincipal = IDL.Principal;
+  const Metadata = IDL.Record({ 'name' : IDL.Text });
   const Player = IDL.Variant({
     'plug' : IDL.Principal,
     'stoic' : IDL.Principal,
@@ -43,7 +43,11 @@ export const idlFactory = ({ IDL }) => {
   const Metascore = IDL.Service({
     'addAdmin' : IDL.Func([IDL.Principal], [], []),
     'cron' : IDL.Func([], [], []),
-    'getGames' : IDL.Func([], [IDL.Vec(Metadata)], ['query']),
+    'getGames' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(GamePrincipal, Metadata))],
+        ['query'],
+      ),
     'getMetascore' : IDL.Func([GamePrincipal, Player], [IDL.Nat], ['query']),
     'getOverallMetascore' : IDL.Func([Player], [IDL.Nat], ['query']),
     'getPercentile' : IDL.Func(

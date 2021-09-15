@@ -17,7 +17,7 @@ export interface Metadata { 'name' : string }
 export interface Metascore {
   'addAdmin' : (arg_0: Principal) => Promise<undefined>,
   'cron' : () => Promise<undefined>,
-  'getGames' : () => Promise<Array<Metadata>>,
+  'getGames' : () => Promise<Array<[GamePrincipal, Metadata]>>,
   'getMetascore' : (arg_0: GamePrincipal, arg_1: Player) => Promise<bigint>,
   'getOverallMetascore' : (arg_0: Player) => Promise<bigint>,
   'getPercentile' : (arg_0: GamePrincipal, arg_1: Player) => Promise<

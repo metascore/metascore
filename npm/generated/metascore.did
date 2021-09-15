@@ -37,7 +37,10 @@ type Metascore =
  service {
    addAdmin: (principal) -> ();
    cron: () -> ();
-   getGames: () -> (vec Metadata) query;
+   getGames: () -> (vec record {
+                          GamePrincipal;
+                          Metadata;
+                        }) query;
    getMetascore: (GamePrincipal, Player) -> (nat) query;
    getOverallMetascore: (Player) -> (nat) query;
    getPercentile: (GamePrincipal, Player) -> (opt float64) query;

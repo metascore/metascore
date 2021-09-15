@@ -1,5 +1,10 @@
+```shell
+# Chore
+npm run declarations
 ```
-const metascoreQuery = useMemo(() => createActor(), []);
 
+```typescript
+// Use
+const metascoreQuery = useMemo(() => createActor(), []);
 metascoreQuery.getGames().then(console.log);
 ```
