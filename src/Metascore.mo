@@ -28,6 +28,8 @@ module {
     // Metadata of a game.
     public type Metadata = {
         name : Text; // Name of the game.
+        playUrl : Text; // A URL where users can play the game.
+        flavorText : ?Text; // Some brief flavor text about the game.
         // TODO: add more fields (e.g. genre, ...)
     };
 

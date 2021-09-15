@@ -50,7 +50,11 @@ check "Get games" "$(dfx canister call metascore getGames)" "(
   vec {
     record {
       principal \"ryjl3-tyaaa-aaaaa-aaaba-cai\";
-      record { name = \"Saga Tarot\" };
+      record {
+        name = \"Saga Tarot\";
+        playUrl = \"https://l2jyf-nqaaa-aaaah-qadha-cai.raw.ic0.app/\";
+        flavorText = opt \"A tarot card game.\";
+      };
     };
   },
 )"
