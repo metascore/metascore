@@ -43,9 +43,13 @@ type Metascore =
                           Metadata;
                         }) query;
    getMetascore: (GamePrincipal, Player) -> (nat) query;
+   getMetascores: (opt nat, opt nat) -> (vec nat) query;
    getOverallMetascore: (Player) -> (nat) query;
    getPercentile: (GamePrincipal, Player) -> (opt float64) query;
+   getPercentileMetascore: (float64) -> (nat) query;
+   getPlayerCount: () -> (nat) query;
    getRanking: (GamePrincipal, Player) -> (opt nat) query;
+   getScoreCount: () -> (nat) query;
    getTop: (nat) -> (vec Score) query;
    http_request: (HttpRequest) -> (HttpResponse) query;
    isAdmin: (principal) -> (bool) query;

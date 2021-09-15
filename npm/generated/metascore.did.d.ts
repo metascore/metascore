@@ -28,13 +28,19 @@ export interface Metascore {
     ) => Promise<Array<Score>>,
   'getGames' : () => Promise<Array<[GamePrincipal, Metadata]>>,
   'getMetascore' : (arg_0: GamePrincipal, arg_1: Player) => Promise<bigint>,
+  'getMetascores' : (arg_0: [] | [bigint], arg_1: [] | [bigint]) => Promise<
+      Array<bigint>
+    >,
   'getOverallMetascore' : (arg_0: Player) => Promise<bigint>,
   'getPercentile' : (arg_0: GamePrincipal, arg_1: Player) => Promise<
       [] | [number]
     >,
+  'getPercentileMetascore' : (arg_0: number) => Promise<bigint>,
+  'getPlayerCount' : () => Promise<bigint>,
   'getRanking' : (arg_0: GamePrincipal, arg_1: Player) => Promise<
       [] | [bigint]
     >,
+  'getScoreCount' : () => Promise<bigint>,
   'getTop' : (arg_0: bigint) => Promise<Array<Score>>,
   'http_request' : (arg_0: HttpRequest) => Promise<HttpResponse>,
   'isAdmin' : (arg_0: Principal) => Promise<boolean>,

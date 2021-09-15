@@ -316,9 +316,32 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     public query func getGameScores(
         game    : MPublic.GamePrincipal,
         count   : ?Nat,
-        offset  : ?Nat
+        offset  : ?Nat,
     ) : async [MPublic.Score] {
         state.getGameScores(game, count, offset);
+    };
+
+    // Returns a list of overall metascores.
+    public query func getMetascores(
+        count   : ?Nat,
+        offset  : ?Nat,
+    ) : async [Nat] {
+        state.getMetascores(count, offset);
+    };
+
+    // Returns the overall metascore for the given percentile.
+    public query func getPercentileMetascore(percentile : Float) : async Nat {
+        state.getPercentileMetascore(percentile);
+    };
+
+    // Returns total number of players.
+    public query func getPlayerCount() : async Nat {
+        state.getPlayerCount();
+    };
+    
+    // Returns total number of scores.
+    public query func getScoreCount() : async Nat {
+        state.getScoreCount();
     };
 
     public query func http_request(
