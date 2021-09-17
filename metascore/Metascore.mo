@@ -7,6 +7,7 @@ import Option "mo:base/Option";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 
+import AR "AccountRecord";
 import GR "GameRecord";
 import MPlayer "../src/Player";
 import MPublic "../src/Metascore";
@@ -18,9 +19,14 @@ module {
     // Internal class to keep track of data within the Metascore canister.
     // Used to keep the 'main.mo' file at a minimum.
     public class Metascore(
-        state : [GR.GameRecordStable],
+        gamesState : [GR.GameRecordStable],
+        accountsState : [AR.AccountRecordStable],
     ) : MStats.PublicInterface {
-        public let games = GR.fromStable(state);
+
+        public let games = GR.fromStable(gamesState);
+        public let accounts = AR.fromStable(accountsState);
+
+        private var nextAccountId : Nat = 1;
 
         public func getPercentile(
             game    : MPublic.GamePrincipal,

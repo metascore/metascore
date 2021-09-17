@@ -19,6 +19,7 @@ import GR "GameRecord";
 import Interface "Interface";
 import M "Metascore";
 import PR "PlayerRecord";
+import AR "AccountRecord";
 
 import MPublic "../src/Metascore";
 import MPlayer "../src/Player";
@@ -29,12 +30,16 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
 
     // Map of registered game canisters.
     private stable var games : [GR.GameRecordStable] = [];
-    private let state = M.Metascore(games);
+    // Map of user accounts.
+    private stable var accounts : [AR.AccountRecordStable] = [];
     // Map of player scores.
     private let scores = PR.emptyPlayerScores(games.size());
+    // Canister state.
+    private let state = M.Metascore(games, accounts);
 
     system func preupgrade() {
         games := GR.toStable(state.games);
+        accounts := AR.toStable(state.accounts);
     };
 
     system func postupgrade() {
@@ -54,6 +59,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
                 };
             };
         };
+        accounts := [];
         games := [];
     };
 
