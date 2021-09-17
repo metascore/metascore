@@ -154,5 +154,12 @@ module {
             // TODO: Develop a simple counter for this;
             1;
         };
+
+        public func getAccount(id : Nat) : Result.Result<AR.AccountRecord, ()> {
+            switch (accounts.get(id)) {
+                case (?account) { #ok(account) };
+                case null #err(());
+            };
+        };
     };
 }

@@ -34,6 +34,33 @@ module {
         AccountRecord,
     >;
 
+    public type AuthenticationRequest = {
+        #authenticate;
+        #addPrincipal : {
+            accountId : Nat;
+            principal : {
+                #stoic : Principal;
+                #plug : Principal;
+            };
+        };
+        #resolveDuplicate : AccountRecord;
+    };
+
+    public type AuthenticationResponse = {
+        #ok                     : { message : Text; account : AccountRecord; };
+        #err                    : { message : Text; };
+        #pendingConfirmation    : { message : Text; awaitingPrincipal : Principal };
+        #pendingDuplicate       : { message : Text; accounts : (AccountRecord, AccountRecord); };
+    };
+
+    public type PendingAccountPrincipalRecord = {
+        stoic : ?Principal;
+        plug : ?Principal;
+        primaryWallet : { #stoic : Principal; #plug : Principal; };
+        stoicConfirmed : Bool;
+        plugConfirmed : Bool;
+    };
+
     public func emptyAccounts(n : Nat) : Accounts {
         HashMap.HashMap<AccountId, AccountRecord>(
             n, Nat.equal, Nat32.fromNat,
