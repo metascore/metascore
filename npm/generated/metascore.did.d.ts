@@ -1,4 +1,27 @@
 import type { Principal } from '@dfinity/principal';
+export type AccountId = bigint;
+export interface AccountRecord {
+  'id' : AccountId,
+  'alias' : [] | [string],
+  'plugAddress' : [] | [Principal],
+  'stoicAddress' : [] | [Principal],
+  'primaryWallet' : Player,
+  'flavorText' : [] | [string],
+  'avatar' : [] | [string],
+}
+export type AuthRequest = { 'authenticate' : Player } |
+  { 'link' : Player };
+export type AuthResponse = {
+    'ok' : { 'message' : string, 'account' : AccountRecord }
+  } |
+  { 'err' : { 'message' : string } } |
+  {
+    'pendingDuplicate' : {
+      'accounts' : [AccountRecord, AccountRecord],
+      'message' : string,
+    }
+  } |
+  { 'pendingConfirmation' : { 'message' : string } };
 export type GamePrincipal = Principal;
 export type HeaderField = [string, string];
 export interface HttpRequest {
@@ -20,7 +43,9 @@ export interface Metadata {
 }
 export interface Metascore {
   'addAdmin' : (arg_0: Principal) => Promise<undefined>,
+  'authenticateAccount' : (arg_0: AuthRequest) => Promise<AuthResponse>,
   'cron' : () => Promise<undefined>,
+  'getAccount' : (arg_0: bigint) => Promise<Result_1>,
   'getGameScores' : (
       arg_0: GamePrincipal,
       arg_1: [] | [bigint],
@@ -54,6 +79,8 @@ export type Player = { 'plug' : Principal } |
   { 'stoic' : Principal };
 export type Result = { 'ok' : null } |
   { 'err' : string };
+export type Result_1 = { 'ok' : AccountRecord } |
+  { 'err' : null };
 export type Score = [Player, bigint];
 export interface StreamingCallbackHttpResponse {
   'token' : [] | [StreamingCallbackToken],

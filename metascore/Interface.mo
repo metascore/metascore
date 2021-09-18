@@ -2,6 +2,7 @@ import Result "mo:base/Result";
 
 import MPlayer "../src/Player";
 import MPublic "../src/Metascore";
+import AR "AccountRecord";
 
 module {
     // CHORE: make sure this is updated! Ensures some compiler checks. ~ quint
@@ -30,6 +31,10 @@ module {
         addAdmin     : shared (Principal)      -> async ();
         removeAdmin  : shared (Principal)      -> async ();
         isAdmin      : query  (Principal)      -> async Bool;
+
+        // Accounts interface
+        getAccount          : query  (Nat) -> async Result.Result<AR.AccountRecord, ()>;
+        authenticateAccount : shared (AR.AuthRequest) -> async AR.AuthResponse;
 
         // CHORE: add functions whenever it is public.
     };

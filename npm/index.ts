@@ -40,6 +40,10 @@ interface MetascoreQuery {
     getPercentileMetascore: Metascore['getPercentileMetascore'];
     // Returns list of overall metascores.
     getMetascores: Metascore['getMetascores'];
+    //
+    authenticateAccount: Metascore['authenticateAccount'];
+    //
+    getAccount: Metascore['getAccount'];
 };
 
 const queryIdlFactory = ({ IDL } : any) => {
@@ -53,7 +57,7 @@ const queryIdlFactory = ({ IDL } : any) => {
     });
 };
 
-const createActor = () => {
+const createActor = (agent?: HttpAgent) => {
     const options : {
         agentOptions : HttpAgentOptions;
         actorOptions : ActorConfig;
@@ -63,7 +67,7 @@ const createActor = () => {
             canisterId: STAGING_PRINCIPAL
         },
     };
-    const agent = new HttpAgent({ ...options?.agentOptions });
+    agent = agent || new HttpAgent({ ...options?.agentOptions });
     return Actor.createActor<MetascoreQuery>(idlFactory, {
         agent,
         ...options?.actorOptions,

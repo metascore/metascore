@@ -23,6 +23,11 @@ type Score =
    Player;
    nat;
  };
+type Result_1 = 
+ variant {
+   err;
+   ok: AccountRecord;
+ };
 type Result = 
  variant {
    err: text;
@@ -36,7 +41,9 @@ type Player =
 type Metascore = 
  service {
    addAdmin: (principal) -> ();
+   authenticateAccount: (AuthRequest) -> (AuthResponse);
    cron: () -> ();
+   getAccount: (nat) -> (Result_1) query;
    getGameScores: (GamePrincipal, opt nat, opt nat) -> (vec Score) query;
    getGames: () -> (vec record {
                           GamePrincipal;
@@ -85,4 +92,37 @@ type HeaderField =
    text;
  };
 type GamePrincipal = principal;
+type AuthResponse = 
+ variant {
+   err: record {message: text;};
+   ok: record {
+         account: AccountRecord;
+         message: text;
+       };
+   pendingConfirmation: record {message: text;};
+   pendingDuplicate:
+    record {
+      accounts: record {
+                  AccountRecord;
+                  AccountRecord;
+                };
+      message: text;
+    };
+ };
+type AuthRequest = 
+ variant {
+   authenticate: Player;
+   link: Player;
+ };
+type AccountRecord = 
+ record {
+   alias: opt text;
+   avatar: opt text;
+   flavorText: opt text;
+   id: AccountId;
+   plugAddress: opt principal;
+   primaryWallet: Player;
+   stoicAddress: opt principal;
+ };
+type AccountId = nat;
 service : () -> Metascore

@@ -350,31 +350,14 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         state.getScoreCount();
     };
 
-    // account
+    // Returns public-facing account data.
     public query func getAccount(id : Nat) : async Result.Result<AR.AccountRecord, ()> {
         state.getAccount(id);
     };
 
-    public shared ({ caller }) func authenticateAccount(request : AR.AuthenticationRequest) : async AR.AuthenticationResponse {
-        // TODO: move this into AccountRecord module
-
-        // #authenticate:
-        caller;
-        // get or create with caller Account
-        // return #ok
-
-        // #addPrincipal:
-        caller;
-        // get or create with caller AR.PendingAccountPrincipalRecord
-        // if not AR.PendingAccountPrincipalRecord is completed, return #pendingConfirmation
-        // if both principals have an associated account, attempt to resolve, or return #pendingDuplicate
-        // dissolve AR.PendingAccountPrincipalRecord, return #ok
-
-        // #resolveDuplicate:
-        caller;
-        // get with caller AR.PendingAccountPrincipalRecord or #err
-        // update chosen account with payload, dissolve unchosen account, dissolve AR.PendingAccountPrincipalRecord
-        // return #ok
+    // Provides various account authentication functionality.
+    public shared ({ caller }) func authenticateAccount(request : AR.AuthRequest) : async AR.AuthResponse {
+        await state.authenticateAccount(request, caller);
     };
 
     public query func http_request(
