@@ -20,7 +20,7 @@ module {
         // Returns a list of scores for a game.
         getGameScores : query (MPublic.GamePrincipal, ?Nat, ?Nat) -> async [MPublic.Score];
         // Returns a list of metascores.
-        getMetascores : query (?Nat, ?Nat) -> async [Nat];
+        getMetascores : query (?Nat, ?Nat) -> async [MPublic.Score];
         // Returns metascore at given percentile.
         getPercentileMetascore : query (Float) -> async Nat;
         // Returns total number of players.

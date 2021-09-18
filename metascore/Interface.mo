@@ -23,7 +23,7 @@ module {
         getGames               : query ()                                      -> async [(MPublic.GamePrincipal, MPublic.Metadata)];
         getTop                 : query (n : Nat)                               -> async [MPublic.Score];
         getGameScores          : query (MPublic.GamePrincipal, ?Nat, ?Nat)     -> async [MPublic.Score];
-        getMetascores          : query (?Nat, ?Nat)                            -> async [Nat];
+        getMetascores          : query (?Nat, ?Nat)                            -> async [MPublic.Score];
         getPercentileMetascore : query (Float)                                 -> async Nat;
         getPlayerCount         : query ()                                      -> async Nat;
         getScoreCount          : query ()                                      -> async Nat;
@@ -37,5 +37,19 @@ module {
         isAdmin      : query  (Principal)      -> async Bool;
 
         // CHORE: add functions whenever it is public.
+    };
+
+    public type StateInterface = {
+        getPercentile          : (MPublic.GamePrincipal, MPlayer.Player) -> ?Float;
+        getRanking             : (MPublic.GamePrincipal, MPlayer.Player) -> ?Nat;
+        getMetascore           : (MPublic.GamePrincipal, MPlayer.Player) -> Nat;
+        getOverallMetascore    : (MPlayer.Player)                        -> Nat;
+        getGames               : ()                                      -> [(MPublic.GamePrincipal, MPublic.Metadata)];
+        getTop                 : (n : Nat)                               -> [MPublic.Score];
+        getGameScores          : (MPublic.GamePrincipal, ?Nat, ?Nat)     -> [MPublic.Score];
+        getMetascores          : (?Nat, ?Nat)                            -> [MPublic.Score];
+        getPercentileMetascore : (Float)                                 -> Nat;
+        getPlayerCount         : ()                                      -> Nat;
+        getScoreCount          : ()                                      -> Nat;
     };
 };
