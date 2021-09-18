@@ -2,6 +2,7 @@ on:
   push:
     paths:
       - 'example/**'
+      - 'metascore/**'
       - 'src/**'
 jobs:
   test:
@@ -14,4 +15,5 @@ jobs:
           install-moc: true
           vessel-version: 0.6.2
       - run: for i in example/*.mo ; do moc $(vessel sources) --check $i ; done
+      - run: for i in metascore/*.mo ; do moc $(vessel sources) --check $i ; done
       - run: for i in src/*.mo ; do moc $(vessel sources) --check $i ; done
