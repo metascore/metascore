@@ -13,10 +13,8 @@ import Result "mo:base/Result";
 import Time "mo:base/Time";
 import Text "mo:base/Text";
 
-import GR "GameRecord";
 import Interface "Interface";
 import State "State";
-import PR "PlayerRecord";
 
 import MPublic "../src/Metascore";
 import MPlayer "../src/Player";
@@ -26,32 +24,14 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     private stable var lastCron : Int = Time.now();
 
     // Map of registered game canisters.
-    private stable var games : [GR.GameRecordStable] = [];
+    private stable var games : [State.StableGame] = [];
     private let state = State.State(games);
-    // Map of player scores.
-    private let scores = PR.emptyPlayerScores(games.size());
 
     system func preupgrade() {
-        games := GR.toStable(state.games);
+        games := State.toStable(state);
     };
 
     system func postupgrade() {
-        for ((gID, (_, ps)) in games.vals()) {
-            for (p in ps.vals()) {
-                let pID = p.player;
-                switch (scores.get(pID)) {
-                    case (null) {
-                        let ps = PR.emptyPlayerGameScores(1);
-                        ps.put(gID, state.getMetascore(gID, pID));
-                        scores.put(pID, ps);
-                    };
-                    case (? ps) {
-                        ps.put(gID, state.getMetascore(gID, pID));
-                        scores.put(pID, ps);
-                    };
-                };
-            };
-        };
         games := [];
     };
 
@@ -120,7 +100,14 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         metadata : MPublic.Metadata
     ) : async () {
         let scores = await getScores(caller);
-        putGameRecord(caller, metadata, scores);
+        for (score in scores.vals()) {
+            State.updateScore(state, caller, score);
+        };
+    };
+
+    private func getScores(gameId : MPublic.GamePrincipal) : async [MPublic.Score] {
+        let game : MPublic.GameInterface = actor(Principal.toText(gameId));
+        await game.metascoreScores();
     };
 
     // Allows owners and games to unregister games/themselves.
@@ -142,8 +129,10 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
                 // Means that the caller was not the game canister itself.
                 assert(false);
             };
-            case (? g)  {
-                putGameRecord(caller, g.metadata, sortScores(scores));
+            case (? _)  {
+                for (score in scores.vals()) {
+                    State.updateScore(state, caller, score);
+                };
             };
         };
     };
@@ -165,108 +154,20 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     // Gets all scores form every game.
     // Currently only used by the cron.
     private func queryAllScores() : async () {
-        for ((gID, g) in state.games.entries()) {
-            let scores = await getScores(gID);
-            putGameRecord(gID, g.metadata, scores);
-        };
-    };
-
-    private func putGameRecord(
-        gameID   : MPublic.GamePrincipal,
-        metadata : MPublic.Metadata,
-        players  : [PR.PlayerRecord],
-    ) {
-        switch (state.games.get(gameID)) {
-            // Game has no scores yet.
-            case (null) {
-                // Add scores to state.
-                state.games.put(gameID, {
-                    metadata;
-                    players = PR.playersFromArray(players); 
-                });
-                // Store individual player scores.
-                for (p in players.vals()) {
-                    let pID = p.player;
-                    switch (scores.get(pID)) {
-                        // Create new player, if no scores yet.
-                        case (null) {
-                            let ps = PR.emptyPlayerGameScores(1);
-                            ps.put(gameID, state.getMetascore(gameID, pID));
-                            scores.put(pID, ps);
-                        };
-                        // Update scores for game.
-                        case (? ps) {
-                            ps.put(gameID, state.getMetascore(gameID, pID));
-                            scores.put(pID, ps);
-                        };
-                    };
-                };
+        for ((gameId, _) in state.games.entries()) {
+            let scores = await getScores(gameId);
+            for (score in scores.vals()) {
+                State.updateScore(state, gameId, score);
             };
-            // Update existing game scores.
-            case (? gr) {
-                // Update game state by updating previous player state.
-                let ps = gr.players;
-                for (p in players.vals()) {
-                    let pID = p.player;
-                    gr.players.put(pID, p);
-                };
-                state.games.put(gameID, {
-                    metadata = gr.metadata;
-                    players  = ps;
-                });
-                // Update individual player scores.
-                for ((_, p) in ps.entries()) {
-                    let pID = p.player;
-                    // Create new player, if no scores yet.
-                    switch (scores.get(pID)) {
-                        case (null) {
-                            let ps = PR.emptyPlayerGameScores(1);
-                            ps.put(gameID, state.getMetascore(gameID, pID));
-                            scores.put(pID, ps);
-                        };
-                        // Update scores for game.
-                        case (? ps) {
-                            ps.put(gameID, state.getMetascore(gameID, pID));
-                            scores.put(pID, ps);
-                        };
-                    };
-                };
-             };
         };
-    };
-
-    // Get all scores of a specific game. Returns a list of sorted scores (high to low).
-    private func getScores(id : MPublic.GamePrincipal) : async [PR.PlayerRecord] {
-        let game : MPublic.GameInterface = actor(Principal.toText(id));
-        sortScores(await game.metascoreScores());
-    };
-
-    private func sortScores(scores : [MPublic.Score]) : [PR.PlayerRecord] {
-        Array.sort<PR.PlayerRecord>(
-            Array.map<MPublic.Score, PR.PlayerRecord>(
-                scores,
-                func ((player, score) : MPublic.Score) : PR.PlayerRecord {
-                    { player; score; };
-                },
-            ),
-            // Sort from high to low.
-            func (a : PR.PlayerRecord, b : PR.PlayerRecord) : Order.Order {
-                let (x, y) = (a.score, b.score);
-                if      (x < y)  { #greater; }
-                else if (x == y) { #equal;   }
-                else             { #less;    };
-            },
-        );
     };
 
     // Return the top n players. Can return less if the number of players is
     // less than n.
     public query func getTop(n : Nat) : async [MPublic.Score] {
         var top : [MPublic.Score] = [];
-        for ((p, scores) in scores.entries()) {
-            top := Array.append<MPublic.Score>(top, [(
-                p, PR.totalScore(scores)
-            )]);
+        for ((p, (s, _)) in state.globalLeaderboard.entries()) {
+            top := Array.append<MPublic.Score>(top, [(p, s)]);
         };
         top;
     };
@@ -347,17 +248,17 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     ) : async AssetStorage.HttpResponse {
         var text = "<html><title>Metascore</title><body>";
         text #= "<h1>Hello world!</h1>";
-        for ((gID, g) in state.games.entries()) {
+        for ((gameId, metadata) in state.games.entries()) {
             text #= "<div>";
-            text #= "<h2>" # g.metadata.name # " (" # Principal.toText(gID) # ")</h2>";
+            text #= "<h2>" # metadata.name # " (" # Principal.toText(gameId) # ")</h2>";
             text #= "<h3>Top 3</h3>";
             text #= "<dl>";
             for (i in Iter.range(0, 2)) {
-                switch (g.players.getValue(i)) {
+                switch (state.globalLeaderboard.getIndex(i)) {
                     case (null) {};
-                    case (? p)  {
-                        text #= "<dt>" # MPlayer.toText(p.player) # "</dt>";
-                        text #= "<dd>" # Nat.toText(p.score) # "</dd>";
+                    case (? (p, (s, _)))  {
+                        text #= "<dt>" # MPlayer.toText(p) # "</dt>";
+                        text #= "<dd>" # Nat.toText(s) # "</dd>";
                     };
                 };
             };
