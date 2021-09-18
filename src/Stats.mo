@@ -4,26 +4,28 @@ import MPublic "Metascore";
 module {
     // Represents the public API of the Metascore canister that serves all data.
     // It should only be used by front-end code.
-    public type PublicInterface = {
+    public type PublicInterface = actor {
         // Returns the percentile of a player in a game game.
-        getPercentile : (MPublic.GamePrincipal, MPlayer.Player) -> ?Float;
+        getPercentile : query (MPublic.GamePrincipal, MPlayer.Player) -> async ?Float;
         // Returns the ranking of a player in the given game;
-        getRanking : (MPublic.GamePrincipal, MPlayer.Player) -> ?Nat;
+        getRanking : query (MPublic.GamePrincipal, MPlayer.Player) -> async ?Nat;
         // Returns the Metascore of a player in the given game;
-        getMetascore : (MPublic.GamePrincipal, MPlayer.Player) -> Nat;
+        getMetascore : query (MPublic.GamePrincipal, MPlayer.Player) -> async Nat;
         // Returns the overall Metascore of a player.
-        getOverallMetascore : (MPlayer.Player) -> Nat;
+        getOverallMetascore : query (MPlayer.Player) -> async Nat;
         // Returns a list of all games.
-        getGames : () -> [(MPublic.GamePrincipal, MPublic.Metadata)];
+        getGames : query () -> async [(MPublic.GamePrincipal, MPublic.Metadata)];
+        // Returns the top n overall players.
+        getTop : query (Nat) -> async [MPublic.Score];
         // Returns a list of scores for a game.
-        getGameScores : (MPublic.GamePrincipal, ?Nat, ?Nat) -> [MPublic.Score];
+        getGameScores : query (MPublic.GamePrincipal, ?Nat, ?Nat) -> async [MPublic.Score];
         // Returns a list of metascores.
-        getMetascores : (?Nat, ?Nat) -> [Nat];
+        getMetascores : query (?Nat, ?Nat) -> async [Nat];
         // Returns metascore at given percentile.
-        getPercentileMetascore : (Float) -> Nat;
+        getPercentileMetascore : query (Float) -> async Nat;
         // Returns total number of players.
-        getPlayerCount : () -> Nat;
+        getPlayerCount : query () -> async Nat;
         // Returns total number of scores.
-        getScoreCount : () -> Nat;
+        getScoreCount : query () -> async Nat;
     };
 };

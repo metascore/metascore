@@ -17,9 +17,9 @@ import MStats "../src/Stats";
 module {
     // Internal class to keep track of data within the Metascore canister.
     // Used to keep the 'main.mo' file at a minimum.
-    public class Metascore(
+    public class State(
         state : [GR.GameRecordStable],
-    ) : MStats.PublicInterface {
+    ) {
         public let games = GR.fromStable(state);
 
         public func getPercentile(

@@ -16,12 +16,17 @@ module {
 
         // PublicInterface (see public/Stats.mo).
 
-        getPercentile         : query (MPublic.GamePrincipal, MPlayer.Player) -> async ?Float;
-        getRanking            : query (MPublic.GamePrincipal, MPlayer.Player) -> async ?Nat;
-        getMetascore          : query (MPublic.GamePrincipal, MPlayer.Player) -> async Nat;
-        getOverallMetascore   : query (MPlayer.Player)                        -> async Nat;
-        getGames              : query ()                                      -> async [(MPublic.GamePrincipal, MPublic.Metadata)];
-        getTop                : query (n : Nat)                               -> async [MPublic.Score];
+        getPercentile          : query (MPublic.GamePrincipal, MPlayer.Player) -> async ?Float;
+        getRanking             : query (MPublic.GamePrincipal, MPlayer.Player) -> async ?Nat;
+        getMetascore           : query (MPublic.GamePrincipal, MPlayer.Player) -> async Nat;
+        getOverallMetascore    : query (MPlayer.Player)                        -> async Nat;
+        getGames               : query ()                                      -> async [(MPublic.GamePrincipal, MPublic.Metadata)];
+        getTop                 : query (n : Nat)                               -> async [MPublic.Score];
+        getGameScores          : query (MPublic.GamePrincipal, ?Nat, ?Nat)     -> async [MPublic.Score];
+        getMetascores          : query (?Nat, ?Nat)                            -> async [Nat];
+        getPercentileMetascore : query (Float)                                 -> async Nat;
+        getPlayerCount         : query ()                                      -> async Nat;
+        getScoreCount          : query ()                                      -> async Nat;
 
         // Internal Interface (used in main.mo).
         registerGame : shared MPublic.Metadata -> async ();
