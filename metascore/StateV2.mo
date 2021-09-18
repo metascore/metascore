@@ -16,9 +16,41 @@ import MPlayer "../src/Player";
 import MPublic "../src/Metascore";
 
 module {
+    public type StableGame = (
+        MPublic.GamePrincipal,
+        (MPublic.Metadata, [MPublic.Score]),
+    );
+    
+    func toStable(s : State) : [StableGame] {
+        var games : [StableGame] = [];
+        for ((gameId, playerScores) in s.gameLeaderboards.entries()) {
+            let metadata : MPublic.Metadata = switch (s.games.get(gameId)) {
+                case (? m)   { m; };
+                case (null) {
+                    // [💀] Unreachable: should not happen.
+                    assert(false); {
+                        name       = "💀";
+                        playUrl    = "#";
+                        flavorText = null;
+                    };
+                };
+            };
+            var scores : [(MPlayer.Player, Nat)] = [];
+            for ((_, playerScore) in playerScores.entries()) {
+                scores := Array.append<MPublic.Score>(
+                    scores, [playerScore],
+                );
+            };
+            games := Array.append<StableGame>(games, [(
+                gameId, (metadata, scores),
+            )])
+        };
+        games;
+    };
+
     /* | WIP | */
     public class State(
-
+        state : [StableGame],
     ) : Interface.StateInterface {        
         // Tuple of a global scores and individual scores per game.
         private type GlobalScores = (
@@ -29,7 +61,7 @@ module {
         );
 
         // [🗄] A map of players to their global scores.
-        let globalLeaderboard : SMap.SortedValueMap<MPlayer.Player, GlobalScores> = SMap.SortedValueMap(
+        public let globalLeaderboard : SMap.SortedValueMap<MPlayer.Player, GlobalScores> = SMap.SortedValueMap(
             0, MPlayer.equal, MPlayer.hash,
             // Sort based on the global metascore.
             O.Descending(func((a, _) : GlobalScores, (b, _) : GlobalScores) : Order.Order{ Nat.compare(a, b); }),
@@ -39,14 +71,53 @@ module {
         private type PlayerScores = SMap.SortedValueMap<MPlayer.Player, MPublic.Score>;
 
         // [🗄] A map of games to their player scores.
-        let gameLeaderboards : HashMap.HashMap<MPublic.GamePrincipal, PlayerScores> = HashMap.HashMap(
+        public let gameLeaderboards : HashMap.HashMap<MPublic.GamePrincipal, PlayerScores> = HashMap.HashMap(
             0, Principal.equal, Principal.hash,
         );
 
+        // Compares two player scores.
+        private let comparePlayerScores = func ((_, a) : MPublic.Score, (_, b) : MPublic.Score) : Order.Order {
+            Nat.compare(a, b);
+        };
+
         // [🗄] A map of games to their metadata.
-        let games : HashMap.HashMap<MPublic.GamePrincipal, MPublic.Metadata> = HashMap.HashMap(
+        public let games : HashMap.HashMap<MPublic.GamePrincipal, MPublic.Metadata> = HashMap.HashMap(
             0, Principal.equal, Principal.hash,
         );
+
+        // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
+        // | Load stable state, given on creation. ~ constructor               |
+        // ◣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◢
+
+        for ((gameId, (metadata, scores)) in state.vals()) {
+            // Game Metadata.
+            games.put(gameId, metadata);
+            // Game Leaderboards.
+            let playerScores = SMap.SortedValueMap<MPlayer.Player, MPublic.Score>(
+                scores.size(), MPlayer.equal, MPlayer.hash,
+                O.Descending(comparePlayerScores),
+            );
+            for ((p, s) in scores.vals()) {
+                playerScores.put(p, (p, s));
+
+                // Global Leaderboard.
+                let (g, ss) : GlobalScores = switch (globalLeaderboard.get(p)) {
+                    case (null) {
+                        (0, HashMap.HashMap<MPublic.GamePrincipal, Nat>(
+                            0, Principal.equal, Principal.hash,
+                        ));
+                    };
+                    case (? p) { p; };
+                };
+                // 1. Add new score to scores.
+                ss.put(gameId, s);
+                globalLeaderboard.put(p, (
+                    g + s, // 2. Add score to global total.
+                    ss,
+                ));
+            };
+            gameLeaderboards.put((gameId, playerScores));
+        };
 
         // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
         // | Internal Interface, which contains a lot of getters...            |
