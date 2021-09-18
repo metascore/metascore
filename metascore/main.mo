@@ -323,7 +323,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     public query func getMetascores(
         count   : ?Nat,
         offset  : ?Nat,
-    ) : async [Nat] {
+    ) : async [MPublic.Score] {
         state.getMetascores(count, offset);
     };
 

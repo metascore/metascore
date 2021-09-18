@@ -29,7 +29,7 @@ module {
             switch (games.get(game)) {
                 case (null) { null; };
                 case (? gc) {
-                    switch (gc.players.getIndex(player)) {
+                    switch (gc.players.getIndexOf(player)) {
                         case (null) { null; };
                         case (? i)  {
                             let n = Float.fromInt(gc.players.size());
@@ -47,7 +47,7 @@ module {
             switch (games.get(game)) {
                 case (null) { null; };
                 case (? gc) {
-                    switch (gc.players.getIndex(player)) {
+                    switch (gc.players.getIndexOf(player)) {
                         case (null) { null;   };
                         case (? r)  { ?(r+1); };
                     };
@@ -126,7 +126,7 @@ module {
         public func getMetascores (
             count : ?Nat,
             offset : ?Nat,
-        ) : [Nat] {
+        ) : [MPublic.Score] {
             // TODO: We need a Metascore data structure, then make this.
             [];
         };
