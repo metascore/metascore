@@ -200,7 +200,7 @@ module {
                             // should also have a top player.
                             assert(false); 0;
                         };
-                        case (? (_, s)) { s };
+                        case (? (_, s)) { s; };
                     };
 
                     playerScores.put(playerId, (playerId, score));
@@ -261,31 +261,74 @@ module {
                     };
                 };
                 case (null) {
+                    // Old top score.
+                    let ots = switch (playerScores.getValue(0)) {
+                        case (null)     { 0; };
+                        case (? (_, s)) { s; };
+                    };
+
                     playerScores.put(playerId, (playerId, score));
                     gameLeaderboards.put(gameId, playerScores);
 
-                    // Update leaderboard accordingly.
-                    switch (globalLeaderboard.get(playerId)) {
-                        case (null) {
-                            // Player has no scores yet.
-                            let ss = HashMap.HashMap<MPublic.GamePrincipal, Nat>(
-                                1, Principal.equal, Principal.hash,
-                            );
-                            let ms = metascore(gameId, score);
-                            ss.put(gameId, score);
-                            globalLeaderboard.put(playerId, (
-                                ms,
-                                ss,
-                            ));
+                    if (score <= ots) {
+                        switch (globalLeaderboard.get(playerId)) {
+                            case (null) {
+                                // Player has no scores yet.
+                                let ss = HashMap.HashMap<MPublic.GamePrincipal, Nat>(
+                                    1, Principal.equal, Principal.hash,
+                                );
+                                let ms = metascore(gameId, score);
+                                ss.put(gameId, score);
+                                globalLeaderboard.put(playerId, (
+                                    ms,
+                                    ss,
+                                ));
+                            };
+                            case (? (g, ss)) {
+                                // Add new score.
+                                let ms = metascore(gameId, score);
+                                ss.put(gameId, score);
+                                globalLeaderboard.put(playerId, (
+                                    g + ms,
+                                    ss,
+                                ));
+                            };
                         };
-                        case (? (g, ss)) {
-                            // Add new score.
-                            let ms = metascore(gameId, score);
-                            ss.put(gameId, score);
-                            globalLeaderboard.put(playerId, (
-                                g + ms,
-                                ss,
-                            ));
+                    } else {
+                        // The top score has changed, so all scores change...
+                        // [🗑] Recalculating everything...
+                        switch (gameLeaderboards.get(gameId)) {
+                            case (null) {
+                                // [💀] Unreachable: should not happen.
+                                // The game should be already be there...
+                                assert(false);
+                            };
+                            case (? playerScores) {
+                                for ((_, (playerId, score)) in playerScores.entries()) {
+                                    switch (globalLeaderboard.get(playerId)) {
+                                        case (null) {
+                                            // Player has no global scores yet.
+                                            let ss = HashMap.HashMap<MPublic.GamePrincipal, Nat>(
+                                                1, Principal.equal, Principal.hash,
+                                            );
+                                            let ms = metascore(gameId, score);
+                                            ss.put(gameId, score);
+                                            globalLeaderboard.put(playerId, (
+                                                ms,
+                                                ss,
+                                            ));
+                                        };
+                                        case (? (g, ss)) {
+                                            let ms = metascore(gameId, score);
+                                            ss.put(gameId, score);
+                                            globalLeaderboard.put(playerId, (
+                                                globalScore(ss),
+                                                ss,
+                                            ));
+                                        };
+                                    };
+                                };
+                            };
                         };
                     };
                 };

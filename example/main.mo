@@ -18,11 +18,11 @@ shared ({caller = owner}) actor class Game() : async MPublic.GameInterface = thi
     );
 
     // Add initial state for example purposes.
-    for (s in [
+    for ((p, s) in [
         (#plug(Principal.fromText("ztlax-3lufm-ahpvx-36scg-7b4lf-m34dn-md7or-ltgjf-nhq4k-qqffn-oqe")), 10),
         (#stoic(Principal.fromText("k4ltb-urk4m-kdfc4-a2sib-br5ub-gcnep-tkxt2-2oqqa-ldzj2-zvmyw-gqe")), 8),
     ].vals()) {
-        state.put(s.0, s.1);
+        state.put(p, s);
     };
 
     public query func metascoreScores() : async [MPublic.Score] {

@@ -86,13 +86,13 @@ echo ""
 
 check "Get Player2 percentile" "$(dfx canister call metascore getPercentile "(principal \"$gameID\", $player2)")" "(opt (0.5 : float64))"
 check "Get Player2 ranking"    "$(dfx canister call metascore getRanking "(principal \"$gameID\", $player2)")"    "(opt (2 : nat))"
-check "Get Player2 metascore"  "$(dfx canister call metascore getOverallMetascore "($player2)")"                  "(750_000_000_000 : nat)"
+check "Get Player2 metascore"  "$(dfx canister call metascore getOverallMetascore "($player2)")"                  "(900_000_000_000 : nat)"
 
 echo ""
 
 check "Updates scores" "$(dfx canister call game sendNewScores "(vec { record { $player2; 15 } })")" "()"
-check "Get Player1 metascore" "$(dfx canister call metascore getOverallMetascore "($player1)")" "(750_000_000_000 : nat)"
-check "Get Player2 metascore" "$(dfx canister call metascore getOverallMetascore "($player2)")" "(1_000_000_000_000 : nat)"
+check "Get Player1 metascore" "$(dfx canister call metascore getOverallMetascore "($player1)")"      "(833_333_333_333 : nat)"
+check "Get Player2 metascore" "$(dfx canister call metascore getOverallMetascore "($player2)")"      "(1_000_000_000_000 : nat)"
 
 echo ""
 
@@ -108,7 +108,7 @@ check "Get top 10" "$(dfx canister call metascore getTop "(10)")" "(
       variant {
         plug = principal \"ztlax-3lufm-ahpvx-36scg-7b4lf-m34dn-md7or-ltgjf-nhq4k-qqffn-oqe\"
       };
-      750_000_000_000 : nat;
+      833_333_333_333 : nat;
     };
   },
 )"

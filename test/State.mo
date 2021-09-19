@@ -11,6 +11,28 @@ let tarotMetadata = {
 };
 let player1 = #plug(Principal.fromText("ztlax-3lufm-ahpvx-36scg-7b4lf-m34dn-md7or-ltgjf-nhq4k-qqffn-oqe"));
 let player2 = #stoic(Principal.fromText("k4ltb-urk4m-kdfc4-a2sib-br5ub-gcnep-tkxt2-2oqqa-ldzj2-zvmyw-gqe"));
+
+do {
+    // Empty state.
+    let state = State.State([
+        (
+            tarot,
+            (
+                tarotMetadata,
+                [],
+            )
+        )
+    ]);
+    for (s in [
+        (player2,  8),
+        (player1, 10),
+    ].vals()) {
+        state.updateScore(tarot, s);
+    };
+    assert(state.getMetascore(tarot, player1) == 1_000_000_000_000);
+    assert(state.getMetascore(tarot, player2) == 900_000_000_000);
+};
+
 let state = State.State([
     (
         tarot,

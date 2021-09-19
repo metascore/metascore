@@ -103,6 +103,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         for (score in scores.vals()) {
             state.updateScore(caller, score);
         };
+        state.games.put(caller, metadata);
     };
 
     private func getScores(gameId : MPublic.GamePrincipal) : async [MPublic.Score] {
