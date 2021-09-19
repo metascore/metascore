@@ -101,7 +101,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     ) : async () {
         let scores = await getScores(caller);
         for (score in scores.vals()) {
-            State.updateScore(state, caller, score);
+            state.updateScore(caller, score);
         };
     };
 
@@ -131,7 +131,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
             };
             case (? _)  {
                 for (score in scores.vals()) {
-                    State.updateScore(state, caller, score);
+                    state.updateScore(caller, score);
                 };
             };
         };
@@ -157,7 +157,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         for ((gameId, _) in state.games.entries()) {
             let scores = await getScores(gameId);
             for (score in scores.vals()) {
-                State.updateScore(state, gameId, score);
+                state.updateScore(gameId, score);
             };
         };
     };

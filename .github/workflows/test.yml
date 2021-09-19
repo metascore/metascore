@@ -4,6 +4,7 @@ on:
       - 'example/**'
       - 'metascore/**'
       - 'src/**'
+      - 'test/**'
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -17,3 +18,4 @@ jobs:
       - run: for i in example/*.mo ; do moc $(vessel sources) --check $i ; done
       - run: for i in metascore/*.mo ; do moc $(vessel sources) --check $i ; done
       - run: for i in src/*.mo ; do moc $(vessel sources) --check $i ; done
+      - run: for i in test/*.mo ; do moc $(vessel sources) -r $i ; done
