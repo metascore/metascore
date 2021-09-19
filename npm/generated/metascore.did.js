@@ -65,6 +65,16 @@ export const idlFactory = ({ IDL }) => {
     'status_code' : IDL.Nat16,
   });
   const Result = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
+  const UpdateRequest = IDL.Record({
+    'alias' : IDL.Opt(IDL.Text),
+    'primaryWallet' : IDL.Opt(Player),
+    'flavorText' : IDL.Opt(IDL.Text),
+    'avatar' : IDL.Opt(IDL.Text),
+  });
+  const UpdateResponse = IDL.Variant({
+    'ok' : AccountRecord,
+    'err' : IDL.Text,
+  });
   const Metascore = IDL.Service({
     'addAdmin' : IDL.Func([IDL.Principal], [], []),
     'authenticateAccount' : IDL.Func([AuthRequest], [AuthResponse], []),
@@ -108,6 +118,7 @@ export const idlFactory = ({ IDL }) => {
     'removeAdmin' : IDL.Func([IDL.Principal], [], []),
     'scoreUpdate' : IDL.Func([IDL.Vec(Score)], [], []),
     'unregister' : IDL.Func([GamePrincipal], [], []),
+    'updateAccount' : IDL.Func([UpdateRequest], [UpdateResponse], []),
   });
   return Metascore;
 };

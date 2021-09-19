@@ -74,6 +74,7 @@ export interface Metascore {
   'removeAdmin' : (arg_0: Principal) => Promise<undefined>,
   'scoreUpdate' : (arg_0: Array<Score>) => Promise<undefined>,
   'unregister' : (arg_0: GamePrincipal) => Promise<undefined>,
+  'updateAccount' : (arg_0: UpdateRequest) => Promise<UpdateResponse>,
 }
 export type Player = { 'plug' : Principal } |
   { 'stoic' : Principal };
@@ -98,4 +99,12 @@ export type StreamingStrategy = {
       'callback' : [Principal, string],
     }
   };
+export interface UpdateRequest {
+  'alias' : [] | [string],
+  'primaryWallet' : [] | [Player],
+  'flavorText' : [] | [string],
+  'avatar' : [] | [string],
+}
+export type UpdateResponse = { 'ok' : AccountRecord } |
+  { 'err' : string };
 export interface _SERVICE extends Metascore {}

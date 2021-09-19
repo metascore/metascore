@@ -1,3 +1,15 @@
+type UpdateResponse = 
+ variant {
+   err: text;
+   ok: AccountRecord;
+ };
+type UpdateRequest = 
+ record {
+   alias: opt text;
+   avatar: opt text;
+   flavorText: opt text;
+   primaryWallet: opt Player;
+ };
 type StreamingStrategy = variant {
                            Callback:
                             record {
@@ -65,6 +77,7 @@ type Metascore =
    removeAdmin: (principal) -> ();
    scoreUpdate: (vec Score) -> ();
    unregister: (GamePrincipal) -> ();
+   updateAccount: (UpdateRequest) -> (UpdateResponse);
  };
 type Metadata = 
  record {
