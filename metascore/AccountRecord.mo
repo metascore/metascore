@@ -89,6 +89,17 @@ module {
         #pendingDuplicate       : { message : Text; accounts : (AccountRecord, AccountRecord); };
     };
 
+    // Account profile update request.
+    public type UpdateRequest = {
+        alias : ?Text;
+        avatar : ?Text;
+        flavorText : ?Text;
+        primaryWallet : ?MPlayer.Player;
+    };
+
+    // Account profile update response.
+    public type UpdateResponse = Result.Result<AccountRecord, Text>;
+
     public func emptyAccounts(n : Nat) : Accounts {
         HashMap.HashMap<AccountId, AccountRecord>(
             n, Nat.equal, Nat32.fromNat,

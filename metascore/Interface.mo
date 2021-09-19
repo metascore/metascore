@@ -33,8 +33,9 @@ module {
         isAdmin      : query  (Principal)      -> async Bool;
 
         // Accounts interface
-        getAccount          : query  (Nat) -> async Result.Result<AR.AccountRecord, ()>;
-        authenticateAccount : shared (AR.AuthRequest) -> async AR.AuthResponse;
+        getAccount          : query  (Nat)              -> async Result.Result<AR.AccountRecord, ()>;
+        updateAccount       : shared (AR.UpdateRequest) -> async AR.UpdateResponse;
+        authenticateAccount : shared (AR.AuthRequest)   -> async AR.AuthResponse;
 
         // CHORE: add functions whenever it is public.
     };

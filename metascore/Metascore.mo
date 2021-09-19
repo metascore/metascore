@@ -167,7 +167,29 @@ module {
             };
         };
 
-        // TODO: updateAccount
+        public func updateAccount (
+            request : AR.UpdateRequest,
+            caller : Principal,
+        ) : AR.UpdateResponse {
+            switch (getAccountByPrincipal(caller)) {
+                case null #err("No account found.");
+                case (?account) {
+                    let response = putAccount({
+                        id = account.id;
+                        alias = request.alias;
+                        avatar = request.avatar;
+                        flavorText = request.flavorText;
+                        primaryWallet = switch (request.primaryWallet) {
+                            case (?wallet) wallet;
+                            case null account.primaryWallet;
+                        };
+                        plugAddress = account.plugAddress;
+                        stoicAddress = account.stoicAddress;
+                    });
+                    return #ok(response);
+                };
+            }
+        };
 
         public func authenticateAccount(
             request : AR.AuthRequest,

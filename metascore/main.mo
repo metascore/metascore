@@ -355,6 +355,11 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         state.getAccount(id);
     };
 
+    // Allows users to update their accounts.
+    public shared ({ caller }) func updateAccount(request : AR.UpdateRequest) : async AR.UpdateResponse {
+        state.updateAccount(request, caller);
+    };
+
     // Provides various account authentication functionality.
     public shared ({ caller }) func authenticateAccount(request : AR.AuthRequest) : async AR.AuthResponse {
         await state.authenticateAccount(request, caller);
