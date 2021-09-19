@@ -12,7 +12,7 @@ import type {
 } from './generated/metascore.did.d';
 
 const STAGING_PRINCIPAL = 'rl4ub-oqaaa-aaaah-qbi3a-cai';
-const PRODUCTION_PRINCIPAL = 'rl4ub-oqaaa-aaaah-qbi3a-cai';
+const PRODUCTION_PRINCIPAL = 'tzvxm-jqaaa-aaaaj-qabga-cai';
 
 // Satisfy dfx generated code
 // ...and vite (because it statically replaces things? wtf???)
@@ -60,14 +60,14 @@ const queryIdlFactory = ({ IDL } : any) => {
     });
 };
 
-const createActor = (agent?: HttpAgent) => {
+const createActor = (agent?: HttpAgent, canisterId = STAGING_PRINCIPAL) => {
     const options : {
         agentOptions : HttpAgentOptions;
         actorOptions : ActorConfig;
     } = {
         agentOptions: {host: 'https://raw.ic0.app'},
         actorOptions: {
-            canisterId: STAGING_PRINCIPAL
+            canisterId
         },
     };
     agent = agent || new HttpAgent({ ...options?.agentOptions });
