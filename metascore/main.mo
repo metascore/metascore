@@ -362,7 +362,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
 
     // Provides various account authentication functionality.
     public shared ({ caller }) func authenticateAccount(request : AR.AuthRequest) : async AR.AuthResponse {
-        await state.authenticateAccount(request, caller);
+        state.authenticateAccount(request, caller);
     };
 
     public query func http_request(

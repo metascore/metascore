@@ -193,8 +193,8 @@ module {
 
         public func authenticateAccount(
             request : AR.AuthRequest,
-            caller  : Principal
-        ) : async AR.AuthResponse {
+            caller  : Principal,
+        ) : AR.AuthResponse {
             switch (request) {
 
                 // Get or create account with caller principal.
@@ -232,6 +232,36 @@ module {
                             plugAddress = caller;
                         });
                     };
+                    // Make sure the accounts can be linked (i.e. they aren't already linked)
+                    switch (getAccountByPrincipal(sisterPrincipal)) {
+                        case (?account) {
+                            if (
+                                not Option.isNull(account.stoicAddress)
+                                and not Option.isNull(account.plugAddress)
+                            ) {
+                                return #err({
+                                    message = "Principal is already linked: "
+                                        # Principal.toText(sisterPrincipal);
+                                });
+                            };
+                        };
+                        case null ();
+                    };
+                    switch (getAccountByPrincipal(callerPrincipal)) {
+                        case (?account) {
+                            if (
+                                not Option.isNull(account.stoicAddress)
+                                and not Option.isNull(account.plugAddress)
+                            ) {
+                                return #err({
+                                    message = "Principal is already linked: "
+                                        # Principal.toText(callerPrincipal);
+                                });
+                            };
+                        };
+                        case null ();
+                    };
+                    // Check for a pending multisig awaiting this principal
                     switch (linkSignatures.get(caller)) {
                         case null {
                             // Sister principal hasn't signed yet, register intent and return.
@@ -250,7 +280,7 @@ module {
                                     });
                                 };
                                 case true {
-                                    // Both principals signed, link them under one account.
+                                    // Both principals have now signed, link them under one account.
                                     switch (
                                         principalAccountMap.get(callerPrincipal),
                                         principalAccountMap.get(sisterPrincipal),
@@ -274,10 +304,7 @@ module {
                                                     message = "Internal error. Please contact the developer."
                                                 });
                                                 case (?account) {
-                                                    // Disolve pending signatures
-                                                    linkSignatures.delete(sisterPrincipal);
-                                                    linkSignatures.delete(callerPrincipal);
-                                                    return #ok({
+                                                    let resp = #ok({
                                                         account = putAccount({
                                                             id = account.id;
                                                             primaryWallet = callerWallet;
@@ -289,6 +316,10 @@ module {
                                                         });
                                                         message = ""
                                                     });
+                                                    // Disolve pending signatures
+                                                    linkSignatures.delete(sisterPrincipal);
+                                                    linkSignatures.delete(callerPrincipal);
+                                                    return resp;
                                                 };
                                             }
                                         };
@@ -299,10 +330,7 @@ module {
                                                     message = "Internal error. Please contact the developer."
                                                 });
                                                 case (?account) {
-                                                    // Disolve pending signatures
-                                                    linkSignatures.delete(sisterPrincipal);
-                                                    linkSignatures.delete(callerPrincipal);
-                                                    return #ok({
+                                                    let resp = #ok({
                                                         account = putAccount({
                                                             id = account.id;
                                                             primaryWallet = sisterWallet;
@@ -314,6 +342,10 @@ module {
                                                         });
                                                         message = ""
                                                     });
+                                                    // Disolve pending signatures
+                                                    linkSignatures.delete(sisterPrincipal);
+                                                    linkSignatures.delete(callerPrincipal);
+                                                    return resp;
                                                 };
                                             }
                                         };
@@ -325,10 +357,7 @@ module {
                                                     message = "Internal error. Please contact the developer."
                                                 });
                                                 case (?account) {
-                                                    // Disolve pending signatures
-                                                    linkSignatures.delete(sisterPrincipal);
-                                                    linkSignatures.delete(callerPrincipal);
-                                                    return #ok({
+                                                    let resp = #ok({
                                                         account = putAccount({
                                                             id = account.id;
                                                             primaryWallet = callerWallet;
@@ -338,10 +367,22 @@ module {
                                                             stoicAddress = ?stoicAddress;
                                                             plugAddress = ?plugAddress;
                                                         });
-                                                        message = ""
+                                                        message = "";
                                                     });
+                                                    // Disolve pending signatures
+                                                    linkSignatures.delete(sisterPrincipal);
+                                                    linkSignatures.delete(callerPrincipal);
+                                                    // Remove duplicate account
+                                                    switch (accounts.get(sisterAccountId)) {
+                                                        case null ();
+                                                        case (?account) {
+                                                            accounts.delete(sisterAccountId);
+                                                            principalAccountMap.delete(sisterPrincipal);
+                                                        };
+                                                    };
+                                                    return resp;
                                                 };
-                                            }
+                                            };
                                         };
                                     };
                                 };
@@ -355,6 +396,17 @@ module {
                 //     // return #ok
                 // };
             };
+        };
+
+        private func getAccountByPlayer (player : MPlayer.Player) : ?AR.AccountRecord {
+            getAccountByPrincipal(unpackPrincipal(player));
+        };
+
+        private func getAccountByPrincipal (principal : Principal) : ?AR.AccountRecord {
+            switch (principalAccountMap.get(principal)) {
+                case null return null;
+                case (?accountId) return accounts.get(accountId);
+            }
         };
 
         private func unpackPrincipal (player : MPlayer.Player) : Principal {
