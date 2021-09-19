@@ -23,12 +23,10 @@ do {
             )
         )
     ]);
-    for (s in [
+    state.updateScores(tarot, [
         (player2,  8),
         (player1, 10),
-    ].vals()) {
-        state.updateScore(tarot, s);
-    };
+    ]);
     assert(state.getMetascore(tarot, player1) == 1_000_000_000_000);
     assert(state.getMetascore(tarot, player2) == 900_000_000_000);
 };
