@@ -266,7 +266,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
                 };
 
 
-                let newPrincipal =MPlayer.unpack(newPlayer);
+                let newPrincipal = MPlayer.unpack(newPlayer);
                 switch (users.links.get(caller)) {
                     case (null) {
                         // Initial request, create link.
