@@ -12,6 +12,6 @@ jobs:
       - uses: actions/checkout@v2
       - uses: aviate-labs/setup-dfx@v0.2.2
         with:
-          dfx-version: 0.8.0
+          dfx-version: 0.8.1
           vessel-version: 0.6.2
       - run: ./example.sh
