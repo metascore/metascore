@@ -20,13 +20,18 @@ module {
     // Used to keep the 'main.mo' file at a minimum.
     public class Metascore(
         gamesState : [GR.GameRecordStable],
-        accountsState : [AR.AccountRecordStable],
+        accountsState : AR.AccountsStateStable,
     ) : MStats.PublicInterface {
 
+        // Games state.
         public let games = GR.fromStable(gamesState);
-        public let accounts = AR.fromStable(accountsState);
-
-        private var nextAccountId : Nat = 1;
+        // Accounts state.
+        public let {
+            accounts            : AR.Accounts;
+            principalAccountMap : AR.PrincipalAccountMap;
+            linkSignatures      : AR.LinkSignatures;
+        } = AR.fromStable(accountsState);
+        private var nextAccountId = AR.nextId(accountsState);
 
         public func getPercentile(
             game    : MPublic.GamePrincipal,
@@ -160,6 +165,305 @@ module {
                 case (?account) { #ok(account) };
                 case null #err(());
             };
+        };
+
+        public func updateAccount (
+            request : AR.UpdateRequest,
+            caller : Principal,
+        ) : AR.UpdateResponse {
+            switch (getAccountByPrincipal(caller)) {
+                case null #err("No account found.");
+                case (?account) {
+                    let response = putAccount({
+                        id = account.id;
+                        alias = request.alias;
+                        avatar = request.avatar;
+                        flavorText = request.flavorText;
+                        primaryWallet = switch (request.primaryWallet) {
+                            case (?wallet) wallet;
+                            case null account.primaryWallet;
+                        };
+                        plugAddress = account.plugAddress;
+                        stoicAddress = account.stoicAddress;
+                    });
+                    return #ok(response);
+                };
+            }
+        };
+
+        public func authenticateAccount(
+            request : AR.AuthRequest,
+            caller  : Principal,
+        ) : AR.AuthResponse {
+            switch (request) {
+
+                // Get or create account with caller principal.
+                case (#authenticate(request)) {
+                    let principal = unpackPrincipal(request);
+                    if (not Principal.equal(principal, caller)) return #err({
+                        message = "Forbidden";
+                    });
+                    let (account, created) = getOrCreateAccount(request);
+                    return #ok({
+                        message = switch (created) {
+                            case true "Created new account.";
+                            case false "Retrieved existing account.";
+                        };
+                        account = account;
+                    });
+                };
+
+                // Sign intent to link principals in one account.
+                case (#link(request)) {
+                    let sisterWallet = request;
+                    let sisterPrincipal = unpackPrincipal(request);
+                    let callerPrincipal = caller;
+                    let { callerWallet; stoicAddress; plugAddress; } = switch (sisterWallet) {
+                        // Assume the caller made a sane request i.e. two different wallets.
+                        // NOTE: Opens the way for developer mistakes on the frontend. 
+                        case (#stoic(_)) ({
+                            callerWallet = #plug(caller);
+                            stoicAddress = caller;
+                            plugAddress = sisterPrincipal;
+                        });
+                        case (#plug(_)) ({
+                            callerWallet = #stoic(caller);
+                            stoicAddress = sisterPrincipal;
+                            plugAddress = caller;
+                        });
+                    };
+                    // Make sure the accounts can be linked (i.e. they aren't already linked)
+                    switch (getAccountByPrincipal(sisterPrincipal)) {
+                        case (?account) {
+                            if (
+                                not Option.isNull(account.stoicAddress)
+                                and not Option.isNull(account.plugAddress)
+                            ) {
+                                return #err({
+                                    message = "Principal is already linked: "
+                                        # Principal.toText(sisterPrincipal);
+                                });
+                            };
+                        };
+                        case null ();
+                    };
+                    switch (getAccountByPrincipal(callerPrincipal)) {
+                        case (?account) {
+                            if (
+                                not Option.isNull(account.stoicAddress)
+                                and not Option.isNull(account.plugAddress)
+                            ) {
+                                return #err({
+                                    message = "Principal is already linked: "
+                                        # Principal.toText(callerPrincipal);
+                                });
+                            };
+                        };
+                        case null ();
+                    };
+                    // Check for a pending multisig awaiting this principal
+                    switch (linkSignatures.get(caller)) {
+                        case null {
+                            // Sister principal hasn't signed yet, register intent and return.
+                            linkSignatures.put(sisterPrincipal, callerPrincipal);
+                            return #pendingConfirmation({
+                                message = "Awaiting confirmation from second principal.";
+                            });
+                        };
+                        case (?pending) {
+                            switch (Principal.equal(pending, sisterPrincipal)) {
+                                case false {
+                                    // Pending principal wasn't sister, register intent and return.
+                                    linkSignatures.put(sisterPrincipal, callerPrincipal);
+                                    return #pendingConfirmation({
+                                        message = "Awaiting confirmation from second principal.";
+                                    });
+                                };
+                                case true {
+                                    // Both principals have now signed, link them under one account.
+                                    switch (
+                                        principalAccountMap.get(callerPrincipal),
+                                        principalAccountMap.get(sisterPrincipal),
+                                    ) {
+                                        case (null, null) {
+                                            // Neither principal had an account. Create one.
+                                            // I don't think this will ever happen, but...
+                                            let account = createAccount(request);
+                                            // Disolve pending signatures
+                                            linkSignatures.delete(sisterPrincipal);
+                                            linkSignatures.delete(callerPrincipal);
+                                            return #ok({
+                                                message = "Principals linked in new account.";
+                                                account;
+                                            });
+                                        };
+                                        case (?callerAccountId, null) {
+                                            // Account exists for first principal, consolidate.
+                                            switch (accounts.get(callerAccountId)) {
+                                                case null return #err({
+                                                    message = "Internal error. Please contact the developer."
+                                                });
+                                                case (?account) {
+                                                    let resp = #ok({
+                                                        account = putAccount({
+                                                            id = account.id;
+                                                            primaryWallet = callerWallet;
+                                                            alias = null;
+                                                            avatar = null;
+                                                            flavorText = null;
+                                                            stoicAddress = ?stoicAddress;
+                                                            plugAddress = ?plugAddress;
+                                                        });
+                                                        message = ""
+                                                    });
+                                                    // Disolve pending signatures
+                                                    linkSignatures.delete(sisterPrincipal);
+                                                    linkSignatures.delete(callerPrincipal);
+                                                    return resp;
+                                                };
+                                            }
+                                        };
+                                        case (null, ?sisterAccountId) {
+                                            // Account exists for sister principal, consolidate.
+                                            switch (accounts.get(sisterAccountId)) {
+                                                case null return #err({
+                                                    message = "Internal error. Please contact the developer."
+                                                });
+                                                case (?account) {
+                                                    let resp = #ok({
+                                                        account = putAccount({
+                                                            id = account.id;
+                                                            primaryWallet = sisterWallet;
+                                                            alias = null;
+                                                            avatar = null;
+                                                            flavorText = null;
+                                                            stoicAddress = ?stoicAddress;
+                                                            plugAddress = ?plugAddress;
+                                                        });
+                                                        message = ""
+                                                    });
+                                                    // Disolve pending signatures
+                                                    linkSignatures.delete(sisterPrincipal);
+                                                    linkSignatures.delete(callerPrincipal);
+                                                    return resp;
+                                                };
+                                            }
+                                        };
+                                        case (?callerAccountId, ?sisterAccountId) {
+                                            // Accounts exist for both principals
+                                            // Attempt to merge them (for now just brute)
+                                            switch (accounts.get(callerAccountId)) {
+                                                case null return #err({
+                                                    message = "Internal error. Please contact the developer."
+                                                });
+                                                case (?account) {
+                                                    let resp = #ok({
+                                                        account = putAccount({
+                                                            id = account.id;
+                                                            primaryWallet = callerWallet;
+                                                            alias = null;
+                                                            avatar = null;
+                                                            flavorText = null;
+                                                            stoicAddress = ?stoicAddress;
+                                                            plugAddress = ?plugAddress;
+                                                        });
+                                                        message = "";
+                                                    });
+                                                    // Disolve pending signatures
+                                                    linkSignatures.delete(sisterPrincipal);
+                                                    linkSignatures.delete(callerPrincipal);
+                                                    // Remove duplicate account
+                                                    switch (accounts.get(sisterAccountId)) {
+                                                        case null ();
+                                                        case (?account) {
+                                                            accounts.delete(sisterAccountId);
+                                                            principalAccountMap.delete(sisterPrincipal);
+                                                        };
+                                                    };
+                                                    return resp;
+                                                };
+                                            };
+                                        };
+                                    };
+                                };
+                            };
+                        };
+                    };
+                };
+                // case (#dedupe(request)) {
+                //     // get with caller AR.PendingAccountPrincipalRecord or #err
+                //     // update chosen account with payload, dissolve unchosen account, dissolve AR.PendingAccountPrincipalRecord
+                //     // return #ok
+                // };
+            };
+        };
+
+        private func getAccountByPlayer (player : MPlayer.Player) : ?AR.AccountRecord {
+            getAccountByPrincipal(unpackPrincipal(player));
+        };
+
+        private func getAccountByPrincipal (principal : Principal) : ?AR.AccountRecord {
+            switch (principalAccountMap.get(principal)) {
+                case null return null;
+                case (?accountId) return accounts.get(accountId);
+            }
+        };
+
+        private func unpackPrincipal (player : MPlayer.Player) : Principal {
+            switch (player) {
+                case (#stoic(p)) p;
+                case (#plug(p)) p;
+            }
+        };
+
+        // Helper to add to denormalized maps
+        private func putAccount(account : AR.AccountRecord) : AR.AccountRecord {
+            accounts.put(account.id, account);
+            switch (account.stoicAddress) {
+                case (?p) principalAccountMap.put(p, account.id);
+                case null ();
+            };
+            switch (account.plugAddress) {
+                case (?p) principalAccountMap.put(p, account.id);
+                case null ();
+            };
+            return account;
+        };
+
+        private func createAccount (primaryWallet : MPlayer.Player) : AR.AccountRecord {
+            let account : AR.AccountRecord = {
+                id = nextAccountId;
+                primaryWallet = primaryWallet;
+                alias = null;
+                avatar = null;
+                flavorText = null;
+                stoicAddress = switch (primaryWallet) {
+                    case (#stoic(address)) ?address;
+                    case (#plug(address)) null;
+                };
+                plugAddress = switch (primaryWallet) {
+                    case (#plug(address)) ?address;
+                    case (#stoic(address)) null;
+                };
+            };
+            ignore putAccount(account);
+            nextAccountId := nextAccountId + 1;
+            account;
+        };
+
+        private func getOrCreateAccount (player : MPlayer.Player) : (AR.AccountRecord, Bool) {
+            let principal = unpackPrincipal(player);
+            switch (principalAccountMap.get(principal)) {
+                case (?accountId) {
+                    switch (accounts.get(accountId)) {
+                        case (?account) return (account, false);
+                        case null ();
+                    };
+                };
+                case null ();
+            };
+            let account = createAccount(player);
+            (account, true);
         };
     };
 }
