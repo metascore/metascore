@@ -17,17 +17,17 @@ module {
 
         // PublicInterface (see public/Stats.mo).
 
-        getPercentile          : query (MPublic.GamePrincipal, MPlayer.Player) -> async ?Float;
-        getRanking             : query (MPublic.GamePrincipal, MPlayer.Player) -> async ?Nat;
-        getMetascore           : query (MPublic.GamePrincipal, MPlayer.Player) -> async Nat;
-        getOverallMetascore    : query (MPlayer.Player)                        -> async Nat;
-        getGames               : query ()                                      -> async [(MPublic.GamePrincipal, MPublic.Metadata)];
-        getTop                 : query (n : Nat)                               -> async [MPublic.Score];
-        getGameScores          : query (MPublic.GamePrincipal, ?Nat, ?Nat)     -> async [MPublic.Score];
-        getMetascores          : query (?Nat, ?Nat)                            -> async [MPublic.Score];
-        getPercentileMetascore : query (Float)                                 -> async Nat;
-        getPlayerCount         : query ()                                      -> async Nat;
-        getScoreCount          : query ()                                      -> async Nat;
+        getPercentile          : query (MPublic.GamePrincipal, MAccount.AccountId) -> async ?Float;
+        getRanking             : query (MPublic.GamePrincipal, MAccount.AccountId) -> async ?Nat;
+        getMetascore           : query (MPublic.GamePrincipal, MAccount.AccountId) -> async Nat;
+        getOverallMetascore    : query (MAccount.AccountId)                        -> async Nat;
+        getGames               : query ()                                          -> async [(MPublic.GamePrincipal, MPublic.Metadata)];
+        getTop                 : query (n : Nat)                                   -> async [MAccount.Score];
+        getGameScores          : query (MPublic.GamePrincipal, ?Nat, ?Nat)         -> async [MAccount.Score];
+        getMetascores          : query (?Nat, ?Nat)                                -> async [MAccount.Score];
+        getPercentileMetascore : query (Float)                                     -> async Nat;
+        getPlayerCount         : query ()                                          -> async Nat;
+        getScoreCount          : query ()                                          -> async Nat;
 
         // AccountInterface (see public/Account.mo)
         getAccount          : query  (MAccount.AccountId)             -> async Result.Result<MAccount.Account, ()>;
@@ -46,16 +46,16 @@ module {
     };
 
     public type StateInterface = {
-        getPercentile          : (MPublic.GamePrincipal, MPlayer.Player) -> ?Float;
-        getRanking             : (MPublic.GamePrincipal, MPlayer.Player) -> ?Nat;
-        getMetascore           : (MPublic.GamePrincipal, MPlayer.Player) -> Nat;
-        getOverallMetascore    : (MPlayer.Player)                        -> Nat;
-        getGames               : ()                                      -> [(MPublic.GamePrincipal, MPublic.Metadata)];
-        getTop                 : (n : Nat)                               -> [MPublic.Score];
-        getGameScores          : (MPublic.GamePrincipal, ?Nat, ?Nat)     -> [MPublic.Score];
-        getMetascores          : (?Nat, ?Nat)                            -> [MPublic.Score];
-        getPercentileMetascore : (Float)                                 -> Nat;
-        getPlayerCount         : ()                                      -> Nat;
-        getScoreCount          : ()                                      -> Nat;
+        getPercentile          : (MPublic.GamePrincipal, MAccount.AccountId) -> ?Float;
+        getRanking             : (MPublic.GamePrincipal, MAccount.AccountId) -> ?Nat;
+        getMetascore           : (MPublic.GamePrincipal, MAccount.AccountId) -> Nat;
+        getOverallMetascore    : (MAccount.AccountId)                        -> Nat;
+        getGames               : ()                                          -> [(MPublic.GamePrincipal, MPublic.Metadata)];
+        getTop                 : (Nat)                                       -> [MAccount.Score];
+        getGameScores          : (MPublic.GamePrincipal, ?Nat, ?Nat)         -> [MAccount.Score];
+        getMetascores          : (?Nat, ?Nat)                                -> [MAccount.Score];
+        getPercentileMetascore : (Float)                                     -> Nat;
+        getPlayerCount         : ()                                          -> Nat;
+        getScoreCount          : ()                                          -> Nat;
     };
 };

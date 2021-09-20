@@ -9,8 +9,8 @@ let tarotMetadata = {
     playUrl = "https://l2jyf-nqaaa-aaaah-qadha-cai.raw.ic0.app/";
     flavorText = ?"A tarot card game.";
 };
-let player1 = #plug(Principal.fromText("ztlax-3lufm-ahpvx-36scg-7b4lf-m34dn-md7or-ltgjf-nhq4k-qqffn-oqe"));
-let player2 = #stoic(Principal.fromText("k4ltb-urk4m-kdfc4-a2sib-br5ub-gcnep-tkxt2-2oqqa-ldzj2-zvmyw-gqe"));
+let player1 = 1;
+let player2 = 2;
 
 do {
     // Empty state.

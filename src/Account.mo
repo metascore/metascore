@@ -3,6 +3,8 @@ import Result "mo:base/Result";
 import Player "Player";
 
 module {
+    public type Score = (AccountId, Nat);
+
     public type AccountId = Nat;
 
     public type Account = {

@@ -117,15 +117,23 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         metadata : MPublic.Metadata
     ) : async () {
         let scores = await getScores(caller);
-        for (score in scores.vals()) {
-            state.updateScore(caller, score);
-        };
+        state.updateScores(caller, scores);
         state.games.put(caller, metadata);
     };
 
-    private func getScores(gameId : MPublic.GamePrincipal) : async [MPublic.Score] {
+    private func getScores(gameId : MPublic.GamePrincipal) : async [MAccount.Score] {
         let game : MPublic.GameInterface = actor(Principal.toText(gameId));
-        await game.metascoreScores();
+        mapScores(await game.metascoreScores());
+    };
+
+    private func mapScores(scores : [MPublic.Score]) : [MAccount.Score] {
+        Array.map<MPublic.Score, MAccount.Score>(
+            scores,
+            func ((player, score) : MPublic.Score) : MAccount.Score {
+                let (account, _) = users.ensureAccount(player);
+                (account.id, score);
+            },
+        );
     };
 
     // Allows owners and games to unregister games/themselves.
@@ -148,9 +156,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
                 assert(false);
             };
             case (? _)  {
-                for (score in scores.vals()) {
-                    state.updateScore(caller, score);
-                };
+                state.updateScores(caller, mapScores(scores));
             };
         };
     };
@@ -289,10 +295,10 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
 
     // Return the top n players. Can return less if the number of players is
     // less than n.
-    public query func getTop(n : Nat) : async [MPublic.Score] {
-        var top : [MPublic.Score] = [];
+    public query func getTop(n : Nat) : async [MAccount.Score] {
+        var top : [MAccount.Score] = [];
         for ((p, (s, _)) in state.globalLeaderboard.entries()) {
-            top := Array.append<MPublic.Score>(top, [(p, s)]);
+            top := Array.append<MAccount.Score>(top, [(p, s)]);
         };
         top;
     };
@@ -301,32 +307,32 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     // Null gets return if the player has no score for that game.
     public query func getPercentile(
         game    : MPublic.GamePrincipal,
-        player  : MPlayer.Player,
+        account : MAccount.AccountId,
     ) : async ?Float {
-        state.getPercentile(game, player);
+        state.getPercentile(game, account);
     };
 
     // Returns the ranking of a player in a specific game (1-index based).
     // Null gets return if the player has no score for that game.
     public query func getRanking(
         game    : MPublic.GamePrincipal,
-        player  : MPlayer.Player,
+        account : MAccount.AccountId,
     ) : async ?Nat {
-        state.getRanking(game, player);
+        state.getRanking(game, account);
     };
 
     // Returns the metascore of a player in a specific game ([0-1T] points).
     // 0 gets return if the player has no score for that game.
     public query func getMetascore(
-        game    : MPublic.GamePrincipal,
-        player  : MPlayer.Player,
+        game   : MPublic.GamePrincipal,
+        account : MAccount.AccountId,
     ) : async Nat {
-        state.getMetascore(game, player);
+        state.getMetascore(game, account);
     };
 
     // Returns the cumulative metascore of a player.
     public query func getOverallMetascore(
-        player  : MPlayer.Player,
+        player  : MAccount.AccountId,
     ) : async Nat {
         state.getOverallMetascore(player);
     };
@@ -341,7 +347,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         game    : MPublic.GamePrincipal,
         count   : ?Nat,
         offset  : ?Nat,
-    ) : async [MPublic.Score] {
+    ) : async [MAccount.Score] {
         state.getGameScores(game, count, offset);
     };
 
@@ -349,7 +355,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     public query func getMetascores(
         count   : ?Nat,
         offset  : ?Nat,
-    ) : async [MPublic.Score] {
+    ) : async [MAccount.Score] {
         state.getMetascores(count, offset);
     };
 
@@ -382,7 +388,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
                 switch (state.globalLeaderboard.getIndex(i)) {
                     case (null) {};
                     case (? (p, (s, _)))  {
-                        text #= "<dt>" # MPlayer.toText(p) # "</dt>";
+                        text #= "<dt>" # Nat.toText(p) # "</dt>";
                         text #= "<dd>" # Nat.toText(s) # "</dd>";
                     };
                 };
