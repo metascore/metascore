@@ -1,7 +1,8 @@
 import Result "mo:base/Result";
 
-import MPlayer "../src/Player";
-import MPublic "../src/Metascore";
+import MAccount "../src/Account";
+import MPlayer  "../src/Player";
+import MPublic  "../src/Metascore";
 
 module {
     // CHORE: make sure this is updated! Ensures some compiler checks. ~ quint
@@ -27,6 +28,11 @@ module {
         getPercentileMetascore : query (Float)                                 -> async Nat;
         getPlayerCount         : query ()                                      -> async Nat;
         getScoreCount          : query ()                                      -> async Nat;
+
+        // AccountInterface (see public/Account.mo)
+        getAccount          : query  (MAccount.AccountId)             -> async Result.Result<MAccount.Account, ()>;
+        updateAccount       : shared (MAccount.UpdateRequest)         -> async MAccount.UpdateResponse;
+        authenticateAccount : shared (MAccount.AuthenticationRequest) -> async MAccount.AuthenticationResponse;
 
         // Internal Interface (used in main.mo).
         registerGame : shared MPublic.Metadata -> async ();

@@ -56,7 +56,6 @@ module {
         Nat.compare(a, b);
     };
 
-    /* | WIP | */
     public class State(
         state : [StableGame],
     ) : Interface.StateInterface {        

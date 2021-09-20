@@ -4,6 +4,7 @@ import Blob "mo:base/Blob";
 import Float "mo:base/Float";
 import Error "mo:base/Error";
 import Hash "mo:base/Hash";
+import HashMap "mo:base/HashMap";
 import Int "mo:base/Int";
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
@@ -15,7 +16,9 @@ import Text "mo:base/Text";
 
 import Interface "Interface";
 import State "State";
+import Users "Users";
 
+import MAccount "../src/Account";
 import MPublic "../src/Metascore";
 import MPlayer "../src/Player";
 
@@ -27,13 +30,27 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     private stable var games : [State.StableGame] = [];
     private let state = State.State(games);
 
+    private stable var nextAccountId = 0;
+    private stable var accounts : [Users.StableAccount] = [];
+    private let users = Users.Users(nextAccountId, accounts);
+
     system func preupgrade() {
-        games := State.toStable(state);
+        games    := State.toStable(state);
+
+        nextAccountId := users.nextAccountId;
+        accounts := Users.toStable(users);
     };
 
     system func postupgrade() {
-        games := [];
+        games         := [];
+  
+        nextAccountId := 0;
+        accounts      := [];
     };
+
+    // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
+    // | Admin zone. 🚫                                                        |
+    // ◣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◢
 
     // List of Metascore admins, these are principals that can trigger the cron,
     // add other admins and remove games.
@@ -162,6 +179,113 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
             };
         };
     };
+
+    // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
+    // | User Account Management                                               |
+    // ◣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◢
+
+    public query func getAccount(id : MAccount.AccountId) : async Result.Result<MAccount.Account, ()> {
+        switch (users.accounts.get(id)) {
+            case (null) { #err(); };
+            case (? a)  { #ok(a); };
+        };
+    };
+
+    public shared({caller}) func updateAccount(
+        req : MAccount.UpdateRequest,
+    ) : async MAccount.UpdateResponse {
+        switch (users.getAccountByPrincipal(caller)) {
+            case (null)      {
+                #err("account not found: " # Principal.toText(caller));
+            };
+            case (? account) {
+                let updatedAccount : MAccount.Account = {
+                    alias         = req.alias;
+                    avatar        = req.avatar;
+                    flavorText    = req.flavorText;
+                    id            = account.id;
+                    plugAddress   = account.plugAddress;
+                    primaryWallet = switch (req.primaryWallet) {
+                        case (null) { account.primaryWallet; };
+                        case (? newWallet) { newWallet; };
+                    };
+                    stoicAddress  = account.stoicAddress;
+                };
+                users.putAccount(updatedAccount);
+                #ok(updatedAccount);
+            };
+        };
+    };
+
+    public shared({caller}) func authenticateAccount(
+        req : MAccount.AuthenticationRequest,
+    ) : async MAccount.AuthenticationResponse {
+        switch (req) {
+            case (#authenticate(playerId)) {
+                let principal = MPlayer.unpack(playerId);
+                if (not Principal.equal(principal, caller)) return #forbidden;
+                let (account, new) = users.ensureAccount(playerId);
+                #ok({
+                    message = if (new) {
+                        "created new account";
+                    } else { 
+                        "retrieved account";
+                    };
+                    account;
+                });
+            };
+            case (#link(playerA, playerB)) {
+                let principalA = MPlayer.unpack(playerA);
+                let principalB = MPlayer.unpack(playerB);
+                if (Principal.equal(principalA, principalB)) return #err({
+                    message = "principals can not be the same";
+                });
+
+                let (player, newPlayer) = if (Principal.equal(caller, principalA)) {
+                    (playerA, playerB);
+                } else {
+                    if (Principal.equal(caller, principalB)) {
+                        (playerB, playerA);
+                    } else {
+                        // Caller is not authorized to link two `other` principals,
+                        // one of the two need to be the same as the caller.
+                        return #forbidden;
+                    };
+                };
+
+                // Check whether the two players can be linked.
+                let account = switch (users.canBeLinked(player, newPlayer)) {
+                    case (#err(msg))    { return #err({ message=msg; })};
+                    case (#ok(account)) { account; };
+                };
+
+
+                let newPrincipal =MPlayer.unpack(newPlayer);
+                switch (users.links.get(caller)) {
+                    case (null) {
+                        // Initial request, create link.
+                        users.links.put(newPrincipal, caller);
+                        #pendingConfirmation({
+                            message = "awaiting confirmation from: " # Principal.toText(newPrincipal);
+                        });
+                    };
+                    case (? link) {
+                        users.links.delete(caller);
+                        users.links.delete(newPrincipal);
+                        let newAccount = users.link(account, newPlayer);
+                        #ok({
+                            message = "linked principals to account";
+                            account = newAccount;
+                        });
+                    };
+                };
+            };
+        };
+    };
+
+    // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
+    // | Public Interface                                                      |
+    // ◣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◢
 
     // Return the top n players. Can return less if the number of players is
     // less than n.
