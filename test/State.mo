@@ -28,7 +28,7 @@ do {
         (player1, 10),
     ]);
     assert(state.getMetascore(tarot, player1) == 1_000_000_000_000);
-    assert(state.getMetascore(tarot, player2) == 900_000_000_000);
+    assert(state.getMetascore(tarot, player2) ==   650_000_000_000);
 };
 
 let state = State.State([
@@ -57,10 +57,10 @@ func testInitialState() {
     assert(state.getGames() == [(tarot, tarotMetadata)]);
 
     assert(state.getMetascore(tarot, player1) == 1_000_000_000_000);
-    assert(state.getMetascore(tarot, player2) == 900_000_000_000);
+    assert(state.getMetascore(tarot, player2) ==   650_000_000_000);
     assert(state.getMetascores(null, null) == [
         (player1, 1_000_000_000_000),
-        (player2,   900_000_000_000),
+        (player2,   650_000_000_000),
     ]);
 
     assert(state.getOverallMetascore(player1) == 1_000_000_000_000);
@@ -69,8 +69,8 @@ func testInitialState() {
     assert(state.getPercentile(tarot, player2) == ?0.5);
 
     assert(state.getPercentileMetascore(1.0) == 1_000_000_000_000);
-    assert(state.getPercentileMetascore(0.9) ==   900_000_000_000);
-    assert(state.getPercentileMetascore(0.5) ==   900_000_000_000);
+    assert(state.getPercentileMetascore(0.9) ==   650_000_000_000);
+    assert(state.getPercentileMetascore(0.5) ==   650_000_000_000);
     assert(state.getPercentileMetascore(0.4) ==                 0);
 
     assert(state.getPlayerCount() == 2);
@@ -82,7 +82,7 @@ func testInitialState() {
 
     assert(state.getTop(3) == [
         (player1, 1_000_000_000_000),
-        (player2,   900_000_000_000),
+        (player2,   650_000_000_000),
     ]);
 };
 
@@ -105,10 +105,10 @@ do {
     assert(state.getGames() == [(tarot, tarotMetadata)]);
 
     assert(state.getMetascore(tarot, player2) == 1_000_000_000_000);
-    assert(state.getMetascore(tarot, player1) ==   916_666_666_666);
+    assert(state.getMetascore(tarot, player1) ==   666_666_666_666);
     assert(state.getMetascores(null, null) == [
         (player2, 1_000_000_000_000),
-        (player1,   916_666_666_666),
+        (player1,   666_666_666_666),
     ]);
 
     assert(state.getOverallMetascore(player2) == 1_000_000_000_000);
@@ -117,8 +117,8 @@ do {
     assert(state.getPercentile(tarot, player1) == ?0.5);
 
     assert(state.getPercentileMetascore(1.0) == 1_000_000_000_000);
-    assert(state.getPercentileMetascore(0.9) ==   916_666_666_666);
-    assert(state.getPercentileMetascore(0.5) ==   916_666_666_666);
+    assert(state.getPercentileMetascore(0.9) ==   666_666_666_666);
+    assert(state.getPercentileMetascore(0.5) ==   666_666_666_666);
     assert(state.getPercentileMetascore(0.4) ==                 0);
 
     assert(state.getPlayerCount() == 2);
@@ -130,7 +130,7 @@ do {
 
     assert(state.getTop(3) == [
         (player2, 1_000_000_000_000),
-        (player1,   916_666_666_666),
+        (player1,   666_666_666_666),
     ]);
 };
 
@@ -155,7 +155,7 @@ do {
     ]);
     assert(state.getGameScores(metascore, null, null) == [
         (player2, 1_000_000_000_000),
-        (player1,   916_666_666_666),
+        (player1,   666_666_666_666),
     ]);
 
     assert(state.getGames() == [
@@ -164,10 +164,10 @@ do {
     ]);
 
     assert(state.getMetascore(metascore, player2) == 1_000_000_000_000);
-    assert(state.getMetascore(metascore, player1) ==   958_333_333_333);
+    assert(state.getMetascore(metascore, player1) ==   583_333_333_333);
     assert(state.getMetascores(null, null) == [
         (player2, 2_000_000_000_000),
-        (player1, 1_874_999_999_999),
+        (player1, 1_249_999_999_999),
     ]);
 
     assert(state.getOverallMetascore(player2) == 2_000_000_000_000);
@@ -176,8 +176,8 @@ do {
     assert(state.getPercentile(metascore, player1) == ?0.5);
 
     assert(state.getPercentileMetascore(1.0) == 2_000_000_000_000);
-    assert(state.getPercentileMetascore(0.9) == 1_874_999_999_999);
-    assert(state.getPercentileMetascore(0.5) == 1_874_999_999_999);
+    assert(state.getPercentileMetascore(0.9) == 1_249_999_999_999);
+    assert(state.getPercentileMetascore(0.5) == 1_249_999_999_999);
     assert(state.getPercentileMetascore(0.4) ==                 0);
 
     assert(state.getPlayerCount() == 2);
@@ -189,7 +189,7 @@ do {
 
     assert(state.getTop(3) == [
         (player2, 2_000_000_000_000),
-        (player1, 1_874_999_999_999),
+        (player1, 1_249_999_999_999),
     ]);
 };
  

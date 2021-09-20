@@ -70,10 +70,10 @@ module {
         );
 
         // Calculates the global score based on all the game scores of a player.
-        private func globalScore(m : HashMap.HashMap<MPublic.GamePrincipal, Nat>) : Nat {
+        private func globalScore(accountId : MAccount.AccountId, m : HashMap.HashMap<MPublic.GamePrincipal, Nat>) : Nat {
             var score = 0;
             for ((gameId, s) in m.entries()) {
-                score += metascore(gameId, s);
+                score += metascore(gameId, accountId, s);
             };
             score;
         };
@@ -104,22 +104,28 @@ module {
 
         // Converts game scores to metascores.
         // | gameScore: a non-normalized score coming from a game.
-        private let T1 = 1_000_000_000_000;
-        private func metascore(gameId : MPublic.GamePrincipal, gameScore : Nat) : Nat {
+        private func metascore(gameId : MPublic.GamePrincipal, accountId : MAccount.AccountId, gameScore : Nat) : Nat {
             switch (gameLeaderboards.get(gameId)) {
                 case (null) { return 0; };
                 case (? accountScores) {
                     switch (accountScores.getValue(0)) {
                         case (null) {
-                            // No scores yet?
-                            return T1;
+                            // There are no scores yet? Well done, you'll get
+                            // them all then...
+                            return 1_000_000_000_000;
                         };
                         case (? (_, s)) {
-                            // You get 0.5T for participation.
+                            // You get up to 0.5T for top 3.
+                            let top = switch (accountScores.getIndexOf(accountId)) {
+                                case (? 0) { 500_000_000_000; };
+                                case (? 1) { 250_000_000_000; };
+                                case (? 2) { 125_000_000_000; };
+                                case (_)   { 0; };
+                            };
                             // You can get up to 0.5T based on your score relative to the best score.
                             let topScore   = Float.fromInt(s);
                             let normalized = Float.fromInt(gameScore) / topScore;
-                            Int.abs(Float.toInt(Float.fromInt(T1) * (0.5 + normalized / 2)));
+                            Int.abs(Float.toInt(Float.fromInt(500_000_000_000) * normalized)) + top;
                         };
                     };
                 };
@@ -144,8 +150,8 @@ module {
             gameLeaderboards.put((gameId, accountScores));
 
             // Global Leaderboard.
-            for ((a, s) in scores.vals()) {
-                let (g, ss) : GlobalScores = switch (globalLeaderboard.get(a)) {
+            for ((accountId, s) in scores.vals()) {
+                let (g, ss) : GlobalScores = switch (globalLeaderboard.get(accountId)) {
                     case (null) {
                         (0, HashMap.HashMap<MPublic.GamePrincipal, Nat>(
                             0, Principal.equal, Principal.hash,
@@ -154,9 +160,9 @@ module {
                     case (? a) { a; };
                 };
                 // 1. Add new score to scores.
-                let ms = metascore(gameId, s);
+                let ms = metascore(gameId, accountId, s);
                 ss.put(gameId, s);
-                globalLeaderboard.put(a, (
+                globalLeaderboard.put(accountId, (
                     g + ms, // 2. Add score to global total.
                     ss,
                 ));
@@ -196,7 +202,7 @@ module {
                                 let ss = HashMap.HashMap<MPublic.GamePrincipal, Nat>(
                                     1, Principal.equal, Principal.hash,
                                 );
-                                let ms = metascore(gameId, score);
+                                let ms = metascore(gameId, accountId, score);
                                 ss.put(gameId, score);
                                 globalLeaderboard.put(accountId, (
                                     ms,
@@ -204,10 +210,10 @@ module {
                                 ));
                             };
                             case (? (g, ss)) {
-                                let ms = metascore(gameId, score);
+                                let ms = metascore(gameId, accountId, score);
                                 ss.put(gameId, score);
                                 globalLeaderboard.put(accountId, (
-                                    globalScore(ss),
+                                    globalScore(accountId, ss),
                                     ss,
                                 ));
                             };
@@ -233,7 +239,7 @@ module {
                     // Score is already the same, no need to update anything.
                     if (score <= os) return false;
                     // Old metascore.
-                    let oms = metascore(gameId, os);
+                    let oms = metascore(gameId, accountId, os);
                     // Old index in ranking. Based on this index we need to do some additional calculations...
                     let oi  = switch (globalLeaderboard.getIndexOf(accountId)) {
                         case (null) {
@@ -271,7 +277,7 @@ module {
                             assert(false);
                         };
                         case (? (g, ss)) {
-                            let ms = metascore(gameId, score);
+                            let ms = metascore(gameId, accountId, score);
                             ss.put(gameId, score);
                             globalLeaderboard.put(accountId, (
                                 // The new score should be bigger than the previous one, this is checked above.
@@ -300,7 +306,7 @@ module {
                             let ss = HashMap.HashMap<MPublic.GamePrincipal, Nat>(
                                 1, Principal.equal, Principal.hash,
                             );
-                            let ms = metascore(gameId, score);
+                            let ms = metascore(gameId, accountId, score);
                             ss.put(gameId, score);
                             globalLeaderboard.put(accountId, (
                                 ms,
@@ -309,7 +315,7 @@ module {
                         };
                         case (? (g, ss)) {
                             // Add new score.
-                            let ms = metascore(gameId, score);
+                            let ms = metascore(gameId, accountId, score);
                             ss.put(gameId, score);
                             globalLeaderboard.put(accountId, (
                                 g + ms,
@@ -356,7 +362,7 @@ module {
                     switch (accountScores.get(accountId)) {
                         case (null)     { 0; }; // Player not found.
                         case (? (_, s)) {
-                            metascore(gameId, s);
+                            metascore(gameId, accountId, s);
                         };
                     };
                 };

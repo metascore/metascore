@@ -71,12 +71,12 @@ echo ""
 
 check "Get Player2 percentile" "$(dfx canister call metascore getPercentile "(principal \"$gameID\", 0)")" "(opt (0.5 : float64))"
 check "Get Player2 ranking"    "$(dfx canister call metascore getRanking "(principal \"$gameID\", 0)")"    "(opt (2 : nat))"
-check "Get Player2 metascore"  "$(dfx canister call metascore getOverallMetascore "(0)")"                  "(900_000_000_000 : nat)"
+check "Get Player2 metascore"  "$(dfx canister call metascore getOverallMetascore "(0)")"                  "(650_000_000_000 : nat)"
 
 echo ""
 
 check "Updates scores" "$(dfx canister call game sendNewScores "(vec { record { $player2; 15 } })")" "()"
-check "Get Player1 metascore" "$(dfx canister call metascore getOverallMetascore "(1)")"      "(833_333_333_333 : nat)"
+check "Get Player1 metascore" "$(dfx canister call metascore getOverallMetascore "(1)")"      "(583_333_333_333 : nat)"
 check "Get Player2 metascore" "$(dfx canister call metascore getOverallMetascore "(0)")"      "(1_000_000_000_000 : nat)"
 
 echo ""
@@ -84,7 +84,7 @@ echo ""
 check "Get top 10" "$(dfx canister call metascore getTop "(10)")" "(
   vec {
     record { 0 : nat; 1_000_000_000_000 : nat };
-    record { 1 : nat; 833_333_333_333 : nat };
+    record { 1 : nat; 583_333_333_333 : nat };
   },
 )"
 
