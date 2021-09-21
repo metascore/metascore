@@ -266,10 +266,10 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
 
 
                 let newPrincipal = MPlayer.unpack(newPlayer);
-                switch (users.links.get(caller)) {
+                switch (users.getLink(caller)) {
                     case (null) {
                         // Initial request, create link.
-                        users.links.put(newPrincipal, caller);
+                        users.links.push((newPrincipal, caller));
                         #pendingConfirmation({
                             message = "awaiting confirmation from: " # Principal.toText(newPrincipal);
                         });
@@ -277,16 +277,16 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
                     case (? link) {
                         if (not Principal.equal(link, newPrincipal)) {
                             // Pending link was not the new player.
-                            users.links.delete(caller); // Do we still need this?
-                            users.links.put(newPrincipal, caller);
+                            users.deleteLink(caller); // Do we still need this?
+                            users.links.push((newPrincipal, caller));
                             return #pendingConfirmation({
                                 message = "awaiting confirmation from: " # Principal.toText(newPrincipal);
                             });
                         };
 
                         // We already get an (new) account from `canBeLinked`.
-                        users.links.delete(caller);
-                        users.links.delete(newPrincipal);
+                        users.deleteLink(caller);
+                        users.deleteLink(newPrincipal);
                         let newAccount = users.link(account, newPlayer);
                         #ok({
                             message = "linked principals to account";

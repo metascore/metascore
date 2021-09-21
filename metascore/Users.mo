@@ -1,8 +1,11 @@
 import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
 import Iter "mo:base/Iter";
+import List "mo:base/List";
 import Nat "mo:base/Nat";
 import Principal "mo:base/Principal";
+import Queue "mo:queue/Queue";
+import EQueue "mo:queue/EvictingQueue";
 import Result "mo:base/Result";
 
 import MAccount "../src/Account";
@@ -35,10 +38,7 @@ module {
             MAccount.AccountId,
         >(users.size() * 2, Principal.equal, Principal.hash);
 
-        public let links = HashMap.HashMap<
-            Principal,
-            Principal,
-        >(0, Principal.equal, Principal.hash);
+        public let links = EQueue.EvictingQueue<(Principal, Principal)>(100);
 
         // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
         // | Load stable state, given on creation. ~ constructor               |
@@ -223,6 +223,26 @@ module {
             };
             putAccount(newAccount);
             newAccount;
+        };
+
+        public func getLink(p : Principal) : ?Principal {
+            for ((from, to) in links.vals()) {
+                if (Principal.equal(from, p)) return ?to;
+            };
+            null;
+        };
+
+        public func deleteLink(p : Principal) {
+            links.custom(func ((i, o) : Queue.Queue<(Principal, Principal)>) : Queue.Queue<(Principal, Principal)> {
+                (deleteLink_(i, p), deleteLink_(o, p));
+            });
+        };
+
+        private func deleteLink_(l : List.List<(Principal, Principal)>, p : Principal) : List.List<(Principal, Principal)> {
+            List.filter(l, func((a, _) : (Principal, Principal)) : Bool {
+                // Only keep principals that are not equal to p.
+                not Principal.equal(a, p);
+            });
         };
     };
 };
