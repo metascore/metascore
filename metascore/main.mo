@@ -137,7 +137,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         id : MPublic.GamePrincipal,
     ) : async () {
         assert(_isAdmin(caller) or id == caller);
-        state.games.delete(id);
+        state.removeGame(id);
     };
 
     // Allows games to send score updates. These updates don't need to be the
@@ -176,9 +176,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     private func queryAllScores() : async () {
         for ((gameId, _) in state.games.entries()) {
             let scores = await getScores(gameId);
-            for (score in scores.vals()) {
-                state.updateScore(gameId, score);
-            };
+            state.updateScores(gameId, scores);
         };
     };
 

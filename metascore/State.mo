@@ -339,6 +339,33 @@ module {
         // | Internal Interface, which contains a lot of getters...            |
         // ◣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◢
 
+        public func removeGame(gameId : MPublic.GamePrincipal) {
+            switch (gameLeaderboards.get(gameId)) {
+                case (null) {
+                    // [💀] Unreachable: should not happen.
+                    // The game should be already be there...
+                    assert(false);
+                };
+                case (? accountScores) {
+                    for ((_, (accountId, score)) in accountScores.entries()) {
+                        switch (globalLeaderboard.get(accountId)) {
+                            case (null) {};
+                            case (? (g, ss)) {
+                                let ms = metascore(gameId, accountId, score);
+                                ss.delete(gameId);
+                                globalLeaderboard.put(accountId, (
+                                    globalScore(accountId, ss),
+                                    ss,
+                                ));
+                            };
+                        };
+                    };
+                };
+            };
+            games.delete(gameId);
+            gameLeaderboards.delete(gameId);
+        };
+
         public func getGameScores(gameId : MPublic.GamePrincipal, count : ?Nat, offset : ?Nat) : [MAccount.Score] {
             let c : Nat = Option.get<Nat>(count,  100);
             let o : Nat = Option.get<Nat>(offset, 0  );

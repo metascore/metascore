@@ -88,6 +88,12 @@ check "Get top 10" "$(dfx canister call metascore getTop "(10)")" "(
   },
 )"
 
+echo ""
+
+check "Unregister game" "$(dfx canister call metascore unregister "(principal \"$gameID\")")" "()"
+
+check "Get top 10" "$(dfx canister call metascore getTop "(10)")" "(vec { record { 0 : nat; 0 : nat }; record { 1 : nat; 0 : nat } })"
+
 bold "\n> TESTS ${GREEN}PASSED${NC}\n"
 
 dfx -q stop > /dev/null 2>&1
