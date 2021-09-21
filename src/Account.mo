@@ -17,6 +17,22 @@ module {
         stoicAddress  : ?Principal;
     };
 
+    public type DetailedScore = (AccountDetails, Nat);
+
+    public type AccountDetails = {
+        alias         : ?Text;
+        avatar        : ?Text;
+        flavorText    : ?Text;
+        id            : AccountId;
+    };
+
+    public func getDetails(account : Account) : AccountDetails = {
+        alias      = account.alias;
+        avatar     = account.avatar;
+        flavorText = account.flavorText;
+        id         = account.id;
+    };
+
     // Represents the public API of the Metascore canister to authenticate users.
     public type PublicInterface = actor {
         // Returns the account associated with the given identifier.

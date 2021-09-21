@@ -12,6 +12,7 @@ import Principal "mo:base/Principal";
 import SMap "mo:sorted/Map";
 
 import Interface "Interface";
+import Users "Users";
 
 import MAccount "../src/Account";
 import MPlayer "../src/Player";
@@ -24,6 +25,7 @@ module {
     );
     
     // Converts the state to its corresponing stable form.
+    // NOTE: does NOT include users!
     public func toStable(s : State) : [StableGame] {
         var games : [StableGame] = [];
         for ((gameId, accountScores) in s.gameLeaderboards.entries()) {
@@ -59,7 +61,9 @@ module {
     };
 
     public class State(
-        state : [StableGame],
+        nextAccountId : MAccount.AccountId,
+        accounts      : [Users.StableAccount],
+        state         : [StableGame],
     ) : Interface.StateInterface {        
         // Tuple of a global scores and individual scores per game.
         private type GlobalScores = (
@@ -77,6 +81,9 @@ module {
             };
             score;
         };
+
+        // User account state.
+        public let users = Users.Users(nextAccountId, accounts);
 
         // [🗄] A map of players to their global scores.
         public let globalLeaderboard : SMap.SortedValueMap<MAccount.AccountId, GlobalScores> = SMap.SortedValueMap(
@@ -332,6 +339,33 @@ module {
         // | Internal Interface, which contains a lot of getters...            |
         // ◣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◢
 
+        public func removeGame(gameId : MPublic.GamePrincipal) {
+            switch (gameLeaderboards.get(gameId)) {
+                case (null) {
+                    // [💀] Unreachable: should not happen.
+                    // The game should be already be there...
+                    assert(false);
+                };
+                case (? accountScores) {
+                    for ((_, (accountId, score)) in accountScores.entries()) {
+                        switch (globalLeaderboard.get(accountId)) {
+                            case (null) {};
+                            case (? (g, ss)) {
+                                let ms = metascore(gameId, accountId, score);
+                                ss.delete(gameId);
+                                globalLeaderboard.put(accountId, (
+                                    globalScore(accountId, ss),
+                                    ss,
+                                ));
+                            };
+                        };
+                    };
+                };
+            };
+            games.delete(gameId);
+            gameLeaderboards.delete(gameId);
+        };
+
         public func getGameScores(gameId : MPublic.GamePrincipal, count : ?Nat, offset : ?Nat) : [MAccount.Score] {
             let c : Nat = Option.get<Nat>(count,  100);
             let o : Nat = Option.get<Nat>(offset, 0  );
@@ -342,9 +376,44 @@ module {
                         Nat.min(c, accountScores.size()),
                         func (i : Nat) : MAccount.Score {
                             switch (accountScores.getValue(i + o)) {
-                                case (? s)  { s; };
-                                case (null) { (0, 0); };
+                                case (? score) { score;  };
+                                case (null)    { (0, 0); };
                             };
+                        },
+                    );
+                };
+            };
+        };
+
+        public func getDetailedGameScores(gameId : MPublic.GamePrincipal, count : ?Nat, offset : ?Nat) : [MAccount.DetailedScore] {
+            let c : Nat = Option.get<Nat>(count,  100);
+            let o : Nat = Option.get<Nat>(offset, 0  );
+            switch (gameLeaderboards.get(gameId)) {
+                case (null) { []; }; // Game not found.
+                case (? accountScores) {
+                    Array.tabulate<MAccount.DetailedScore>(
+                        Nat.min(c, accountScores.size()),
+                        func (i : Nat) : MAccount.DetailedScore {
+                            switch (accountScores.getIndex(i + o)) {
+                                case (null) {};
+                                case (? (accountId, (_, score))) {
+                                    switch (users.accounts.get(accountId)) {
+                                        case (null) {};
+                                        case (? account) {
+                                            return (
+                                                MAccount.getDetails(account),
+                                                score,
+                                            );
+                                        };
+                                    };
+                                };
+                            };
+                            ({
+                                alias      = null;
+                                avatar     = null;
+                                flavorText = ?"Dummy account";
+                                id         = 0;
+                            }, 0);
                         },
                     );
                 };
@@ -385,6 +454,36 @@ module {
             );
         };
 
+        public func getDetailedMetascores(count : ?Nat, offset : ?Nat) : [MAccount.DetailedScore] {
+            let c : Nat = Option.get<Nat>(count,  100);
+            let o : Nat = Option.get<Nat>(offset, 0  );
+            Array.tabulate<MAccount.DetailedScore>(
+                Nat.min(c, globalLeaderboard.size()),
+                func (i : Nat) : MAccount.DetailedScore {
+                    switch (globalLeaderboard.getIndex(i + o)) {
+                        case (null) {};
+                        case (? (accountId, (score, _))) {
+                            switch (users.accounts.get(accountId)) {
+                                case (null) {};
+                                case (? account) {
+                                    return (
+                                        MAccount.getDetails(account),
+                                        score,
+                                    );
+                                };
+                            };
+                        };
+                    };
+                    ({
+                        alias      = null;
+                        avatar     = null;
+                        flavorText = ?"Dummy account";
+                        id         = 0;
+                    }, 0);
+                },
+            );
+        };
+
         public func getOverallMetascore(accountId : MAccount.AccountId) : Nat {
             switch (globalLeaderboard.get(accountId)) {
                 case (null)     { 0; };
@@ -392,17 +491,12 @@ module {
             };
         };
 
-        public func getPercentile(gameId : MPublic.GamePrincipal, accountId : MAccount.AccountId) : ?Float {
-            switch (gameLeaderboards.get(gameId)) {
+        public func getPercentile(accountId : MAccount.AccountId) : ?Float {
+            switch (globalLeaderboard.getIndexOf(accountId)) {
                 case (null) { null; };
-                case (? accountScores) {
-                    switch (accountScores.getIndexOf(accountId)) {
-                        case (null) { null; };
-                        case (? i)  {
-                            let n = Float.fromInt(accountScores.size());
-                            ?((n - Float.fromInt(i)) / n);
-                        };
-                    };
+                case (? i)  {
+                    let n = Float.fromInt(globalLeaderboard.size());
+                    ?((n - Float.fromInt(i)) / n);
                 };
             };
         };
