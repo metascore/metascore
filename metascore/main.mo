@@ -232,10 +232,9 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
                 if (not Principal.equal(principal, caller)) return #forbidden;
                 let (account, new) = users.ensureAccount(playerId);
                 #ok({
-                    message = if (new) {
-                        "created new account";
-                    } else { 
-                        "retrieved account";
+                    message = switch (new) {
+                        case (true)  "created new account";
+                        case (false) "retrieved account";
                     };
                     account;
                 });
@@ -276,6 +275,16 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
                         });
                     };
                     case (? link) {
+                        if (not Principal.equal(link, newPrincipal)) {
+                            // Pending link was not the new player.
+                            users.links.delete(caller); // Do we still need this?
+                            users.links.put(newPrincipal, caller);
+                            return #pendingConfirmation({
+                                message = "awaiting confirmation from: " # Principal.toText(newPrincipal);
+                            });
+                        };
+
+                        // We already get an (new) account from `canBeLinked`.
                         users.links.delete(caller);
                         users.links.delete(newPrincipal);
                         let newAccount = users.link(account, newPlayer);

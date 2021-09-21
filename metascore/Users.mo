@@ -138,12 +138,6 @@ module {
             player    : MPlayer.Player,
             newPlayer : MPlayer.Player,
         ) : Result.Result<MAccount.Account, Text> {
-            // Check whether the other player is not already linked.
-            switch (getAccountByPrincipal(MPlayer.unpack(newPlayer))) {
-                case (? _)  { return #err("other principal already linked"); };
-                case (null) {};
-            };
-
             // Check whether the player has an account and that the other wallet is empty.
             // Also checks whether the two players have different wallet types.
             switch (getAccountByPrincipal(MPlayer.unpack(player))) {
