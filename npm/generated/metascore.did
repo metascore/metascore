@@ -1,7 +1,7 @@
 type UpdateResponse = 
  variant {
    err: text;
-   ok: AccountRecord;
+   ok: Account;
  };
 type UpdateRequest = 
  record {
@@ -30,6 +30,11 @@ type StreamingCallbackHttpResponse =
    body: vec nat8;
    token: opt StreamingCallbackToken;
  };
+type Score__1 = 
+ record {
+   AccountId;
+   nat;
+ };
 type Score = 
  record {
    Player;
@@ -38,7 +43,7 @@ type Score =
 type Result_1 = 
  variant {
    err;
-   ok: AccountRecord;
+   ok: Account;
  };
 type Result = 
  variant {
@@ -53,23 +58,23 @@ type Player =
 type Metascore = 
  service {
    addAdmin: (principal) -> ();
-   authenticateAccount: (AuthRequest) -> (AuthResponse);
+   authenticateAccount: (AuthenticationRequest) -> (AuthenticationResponse);
    cron: () -> ();
-   getAccount: (nat) -> (Result_1) query;
-   getGameScores: (GamePrincipal, opt nat, opt nat) -> (vec Score) query;
+   getAccount: (AccountId) -> (Result_1) query;
+   getGameScores: (GamePrincipal, opt nat, opt nat) -> (vec Score__1) query;
    getGames: () -> (vec record {
                           GamePrincipal;
                           Metadata;
                         }) query;
-   getMetascore: (GamePrincipal, Player) -> (nat) query;
-   getMetascores: (opt nat, opt nat) -> (vec nat) query;
-   getOverallMetascore: (Player) -> (nat) query;
-   getPercentile: (GamePrincipal, Player) -> (opt float64) query;
+   getMetascore: (GamePrincipal, AccountId) -> (nat) query;
+   getMetascores: (opt nat, opt nat) -> (vec Score__1) query;
+   getOverallMetascore: (AccountId) -> (nat) query;
+   getPercentile: (GamePrincipal, AccountId) -> (opt float64) query;
    getPercentileMetascore: (float64) -> (nat) query;
    getPlayerCount: () -> (nat) query;
-   getRanking: (GamePrincipal, Player) -> (opt nat) query;
+   getRanking: (GamePrincipal, AccountId) -> (opt nat) query;
    getScoreCount: () -> (nat) query;
-   getTop: (nat) -> (vec Score) query;
+   getTop: (nat) -> (vec Score__1) query;
    http_request: (HttpRequest) -> (HttpResponse) query;
    isAdmin: (principal) -> (bool) query;
    register: (GamePrincipal) -> (Result);
@@ -105,29 +110,26 @@ type HeaderField =
    text;
  };
 type GamePrincipal = principal;
-type AuthResponse = 
+type AuthenticationResponse = 
  variant {
    err: record {message: text;};
+   forbidden;
    ok: record {
-         account: AccountRecord;
+         account: Account;
          message: text;
        };
    pendingConfirmation: record {message: text;};
-   pendingDuplicate:
-    record {
-      accounts: record {
-                  AccountRecord;
-                  AccountRecord;
-                };
-      message: text;
-    };
  };
-type AuthRequest = 
+type AuthenticationRequest = 
  variant {
    authenticate: Player;
-   link: Player;
+   link: record {
+           Player;
+           Player;
+         };
  };
-type AccountRecord = 
+type AccountId = nat;
+type Account = 
  record {
    alias: opt text;
    avatar: opt text;
@@ -137,5 +139,4 @@ type AccountRecord =
    primaryWallet: Player;
    stoicAddress: opt principal;
  };
-type AccountId = nat;
 service : () -> Metascore

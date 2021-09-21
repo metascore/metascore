@@ -1,6 +1,6 @@
 {
   "name": "@metascore/query",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Public interface for querying Metascore staging canister.",
   "main": "index.ts",
   "scripts": {
