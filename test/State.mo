@@ -65,8 +65,8 @@ func testInitialState() {
 
     assert(state.getOverallMetascore(player1) == 1_000_000_000_000);
 
-    assert(state.getPercentile(tarot, player1) == ?1.0);
-    assert(state.getPercentile(tarot, player2) == ?0.5);
+    assert(state.getPercentile(player1) == ?1.0);
+    assert(state.getPercentile(player2) == ?0.5);
 
     assert(state.getPercentileMetascore(1.0) == 1_000_000_000_000);
     assert(state.getPercentileMetascore(0.9) ==   650_000_000_000);
@@ -113,8 +113,8 @@ do {
 
     assert(state.getOverallMetascore(player2) == 1_000_000_000_000);
 
-    assert(state.getPercentile(tarot, player2) == ?1.0);
-    assert(state.getPercentile(tarot, player1) == ?0.5);
+    assert(state.getPercentile(player2) == ?1.0);
+    assert(state.getPercentile(player1) == ?0.5);
 
     assert(state.getPercentileMetascore(1.0) == 1_000_000_000_000);
     assert(state.getPercentileMetascore(0.9) ==   666_666_666_666);
@@ -172,8 +172,8 @@ do {
 
     assert(state.getOverallMetascore(player2) == 2_000_000_000_000);
 
-    assert(state.getPercentile(metascore, player2) == ?1.0);
-    assert(state.getPercentile(metascore, player1) == ?0.5);
+    assert(state.getPercentile(player2) == ?1.0);
+    assert(state.getPercentile(player1) == ?0.5);
 
     assert(state.getPercentileMetascore(1.0) == 2_000_000_000_000);
     assert(state.getPercentileMetascore(0.9) == 1_249_999_999_999);

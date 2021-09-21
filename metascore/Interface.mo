@@ -17,7 +17,7 @@ module {
 
         // PublicInterface (see public/Stats.mo).
 
-        getPercentile          : query (MPublic.GamePrincipal, MAccount.AccountId) -> async ?Float;
+        getPercentile          : query (MAccount.AccountId)                        -> async ?Float;
         getRanking             : query (MPublic.GamePrincipal, MAccount.AccountId) -> async ?Nat;
         getMetascore           : query (MPublic.GamePrincipal, MAccount.AccountId) -> async Nat;
         getOverallMetascore    : query (MAccount.AccountId)                        -> async Nat;
@@ -46,7 +46,7 @@ module {
     };
 
     public type StateInterface = {
-        getPercentile          : (MPublic.GamePrincipal, MAccount.AccountId) -> ?Float;
+        getPercentile          : (MAccount.AccountId)                        -> ?Float;
         getRanking             : (MPublic.GamePrincipal, MAccount.AccountId) -> ?Nat;
         getMetascore           : (MPublic.GamePrincipal, MAccount.AccountId) -> Nat;
         getOverallMetascore    : (MAccount.AccountId)                        -> Nat;

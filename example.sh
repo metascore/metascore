@@ -63,13 +63,13 @@ check "Get game scores" "$(dfx canister call metascore getGameScores "(principal
 
 echo ""
 
-check "Get Player1 percentile" "$(dfx canister call metascore getPercentile "(principal \"$gameID\", 1)")" "(opt (1 : float64))"
+check "Get Player1 percentile" "$(dfx canister call metascore getPercentile "(1)")" "(opt (1 : float64))"
 check "Get Player1 ranking"    "$(dfx canister call metascore getRanking "(principal \"$gameID\", 1)")"    "(opt (1 : nat))"
 check "Get Player1 metascore"  "$(dfx canister call metascore getOverallMetascore "(1)")"                  "(1_000_000_000_000 : nat)"
 
 echo ""
 
-check "Get Player2 percentile" "$(dfx canister call metascore getPercentile "(principal \"$gameID\", 0)")" "(opt (0.5 : float64))"
+check "Get Player2 percentile" "$(dfx canister call metascore getPercentile "(0)")" "(opt (0.5 : float64))"
 check "Get Player2 ranking"    "$(dfx canister call metascore getRanking "(principal \"$gameID\", 0)")"    "(opt (2 : nat))"
 check "Get Player2 metascore"  "$(dfx canister call metascore getOverallMetascore "(0)")"                  "(650_000_000_000 : nat)"
 

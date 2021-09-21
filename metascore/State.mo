@@ -392,17 +392,12 @@ module {
             };
         };
 
-        public func getPercentile(gameId : MPublic.GamePrincipal, accountId : MAccount.AccountId) : ?Float {
-            switch (gameLeaderboards.get(gameId)) {
+        public func getPercentile(accountId : MAccount.AccountId) : ?Float {
+            switch (globalLeaderboard.getIndexOf(accountId)) {
                 case (null) { null; };
-                case (? accountScores) {
-                    switch (accountScores.getIndexOf(accountId)) {
-                        case (null) { null; };
-                        case (? i)  {
-                            let n = Float.fromInt(accountScores.size());
-                            ?((n - Float.fromInt(i)) / n);
-                        };
-                    };
+                case (? i)  {
+                    let n = Float.fromInt(globalLeaderboard.size());
+                    ?((n - Float.fromInt(i)) / n);
                 };
             };
         };

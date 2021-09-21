@@ -315,10 +315,9 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     // Returns the percentile of a player in a specific game.
     // Null gets return if the player has no score for that game.
     public query func getPercentile(
-        game    : MPublic.GamePrincipal,
         account : MAccount.AccountId,
     ) : async ?Float {
-        state.getPercentile(game, account);
+        state.getPercentile(account);
     };
 
     // Returns the ranking of a player in a specific game (1-index based).

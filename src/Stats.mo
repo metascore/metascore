@@ -6,7 +6,7 @@ module {
     // It should only be used by front-end code.
     public type PublicInterface = actor {
         // Returns the percentile of a player in a game game.
-        getPercentile : query (MPublic.GamePrincipal, MAccount.AccountId) -> async ?Float;
+        getPercentile : query (MAccount.AccountId) -> async ?Float;
         // Returns the ranking of a player in the given game;
         getRanking : query (MPublic.GamePrincipal, MAccount.AccountId) -> async ?Nat;
         // Returns the Metascore of a player in the given game;
