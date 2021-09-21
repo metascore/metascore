@@ -47,6 +47,12 @@ interface MetascoreQuery {
     getAccount: Metascore['getAccount'];
     // Allow users to update their accounts.
     updateAccount: Metascore['updateAccount'];
+    // Get profile info for an account
+    getAccountDetails: Metascore['getAccountDetails'];
+    // Get game scores with account data
+    getDetailedGameScores: Metascore['getDetailedGameScores'];
+    // Get metascores with account data
+    getDetailedMetascores: Metascore['getDetailedMetascores'];
 };
 
 const queryIdlFactory = ({ IDL } : any) => {

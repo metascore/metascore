@@ -23,8 +23,16 @@ export const idlFactory = ({ IDL }) => {
     'forbidden' : IDL.Null,
     'pendingConfirmation' : IDL.Record({ 'message' : IDL.Text }),
   });
-  const Result_1 = IDL.Variant({ 'ok' : Account, 'err' : IDL.Null });
+  const Result_2 = IDL.Variant({ 'ok' : Account, 'err' : IDL.Null });
+  const AccountDetails = IDL.Record({
+    'id' : AccountId,
+    'alias' : IDL.Opt(IDL.Text),
+    'flavorText' : IDL.Opt(IDL.Text),
+    'avatar' : IDL.Opt(IDL.Text),
+  });
+  const Result_1 = IDL.Variant({ 'ok' : AccountDetails, 'err' : IDL.Null });
   const GamePrincipal = IDL.Principal;
+  const DetailedScore = IDL.Tuple(AccountDetails, IDL.Nat);
   const Score__1 = IDL.Tuple(AccountId, IDL.Nat);
   const Metadata = IDL.Record({
     'name' : IDL.Text,
@@ -81,7 +89,18 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'cron' : IDL.Func([], [], []),
-    'getAccount' : IDL.Func([AccountId], [Result_1], ['query']),
+    'getAccount' : IDL.Func([AccountId], [Result_2], ['query']),
+    'getAccountDetails' : IDL.Func([AccountId], [Result_1], ['query']),
+    'getDetailedGameScores' : IDL.Func(
+        [GamePrincipal, IDL.Opt(IDL.Nat), IDL.Opt(IDL.Nat)],
+        [IDL.Vec(DetailedScore)],
+        ['query'],
+      ),
+    'getDetailedMetascores' : IDL.Func(
+        [IDL.Opt(IDL.Nat), IDL.Opt(IDL.Nat)],
+        [IDL.Vec(DetailedScore)],
+        ['query'],
+      ),
     'getGameScores' : IDL.Func(
         [GamePrincipal, IDL.Opt(IDL.Nat), IDL.Opt(IDL.Nat)],
         [IDL.Vec(Score__1)],
@@ -99,11 +118,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getOverallMetascore' : IDL.Func([AccountId], [IDL.Nat], ['query']),
-    'getPercentile' : IDL.Func(
-        [GamePrincipal, AccountId],
-        [IDL.Opt(IDL.Float64)],
-        ['query'],
-      ),
+    'getPercentile' : IDL.Func([AccountId], [IDL.Opt(IDL.Float64)], ['query']),
     'getPercentileMetascore' : IDL.Func([IDL.Float64], [IDL.Nat], ['query']),
     'getPlayerCount' : IDL.Func([], [IDL.Nat], ['query']),
     'getRanking' : IDL.Func(

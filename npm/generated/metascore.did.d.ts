@@ -8,6 +8,12 @@ export interface Account {
   'flavorText' : [] | [string],
   'avatar' : [] | [string],
 }
+export interface AccountDetails {
+  'id' : AccountId,
+  'alias' : [] | [string],
+  'flavorText' : [] | [string],
+  'avatar' : [] | [string],
+}
 export type AccountId = bigint;
 export type AuthenticationRequest = { 'authenticate' : Player } |
   { 'link' : [Player, Player] };
@@ -17,6 +23,7 @@ export type AuthenticationResponse = {
   { 'err' : { 'message' : string } } |
   { 'forbidden' : null } |
   { 'pendingConfirmation' : { 'message' : string } };
+export type DetailedScore = [AccountDetails, bigint];
 export type GamePrincipal = Principal;
 export type HeaderField = [string, string];
 export interface HttpRequest {
@@ -42,7 +49,17 @@ export interface Metascore {
       AuthenticationResponse
     >,
   'cron' : () => Promise<undefined>,
-  'getAccount' : (arg_0: AccountId) => Promise<Result_1>,
+  'getAccount' : (arg_0: AccountId) => Promise<Result_2>,
+  'getAccountDetails' : (arg_0: AccountId) => Promise<Result_1>,
+  'getDetailedGameScores' : (
+      arg_0: GamePrincipal,
+      arg_1: [] | [bigint],
+      arg_2: [] | [bigint],
+    ) => Promise<Array<DetailedScore>>,
+  'getDetailedMetascores' : (
+      arg_0: [] | [bigint],
+      arg_1: [] | [bigint],
+    ) => Promise<Array<DetailedScore>>,
   'getGameScores' : (
       arg_0: GamePrincipal,
       arg_1: [] | [bigint],
@@ -54,9 +71,7 @@ export interface Metascore {
       Array<Score__1>
     >,
   'getOverallMetascore' : (arg_0: AccountId) => Promise<bigint>,
-  'getPercentile' : (arg_0: GamePrincipal, arg_1: AccountId) => Promise<
-      [] | [number]
-    >,
+  'getPercentile' : (arg_0: AccountId) => Promise<[] | [number]>,
   'getPercentileMetascore' : (arg_0: number) => Promise<bigint>,
   'getPlayerCount' : () => Promise<bigint>,
   'getRanking' : (arg_0: GamePrincipal, arg_1: AccountId) => Promise<
@@ -77,7 +92,9 @@ export type Player = { 'plug' : Principal } |
   { 'stoic' : Principal };
 export type Result = { 'ok' : null } |
   { 'err' : string };
-export type Result_1 = { 'ok' : Account } |
+export type Result_1 = { 'ok' : AccountDetails } |
+  { 'err' : null };
+export type Result_2 = { 'ok' : Account } |
   { 'err' : null };
 export type Score = [Player, bigint];
 export type Score__1 = [AccountId, bigint];
