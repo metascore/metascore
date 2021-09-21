@@ -84,13 +84,26 @@ module {
         // Stores the given account.
         public func putAccount(account : MAccount.Account) {
             accounts.put(account.id, account);
+            switch (account.plugAddress) {
+                case (null) {};
+                case (? p)  { principals.put(p, account.id); };
+            };
             switch (account.stoicAddress) {
                 case (null) {};
                 case (? p)  { principals.put(p, account.id); };
             };
+        };
+
+        // Deletes the given account.
+        public func deleteAccount(account : MAccount.Account) {
+            accounts.delete(account.id);
             switch (account.plugAddress) {
                 case (null) {};
-                case (? p)  { principals.put(p, account.id); };
+                case (? p)  { principals.delete(p); };
+            };
+            switch (account.stoicAddress) {
+                case (null) {};
+                case (? p)  { principals.delete(p); };
             };
         };
 
@@ -178,6 +191,12 @@ module {
             account   : MAccount.Account,
             newPlayer : MPlayer.Player,
         ) : MAccount.Account {
+            // Delete other account of player, if exists.
+            switch (getAccountByPrincipal(MPlayer.unpack(newPlayer))) {
+                case (? account) { deleteAccount(account); };
+                case (null) {};
+            };
+            // Add player to account.
             let newAccount : MAccount.Account = switch (newPlayer) {
                 case (#plug(p)) {
                     {
