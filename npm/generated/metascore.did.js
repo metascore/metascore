@@ -1,9 +1,30 @@
 export const idlFactory = ({ IDL }) => {
-  const GamePrincipal = IDL.Principal;
   const Player = IDL.Variant({
     'plug' : IDL.Principal,
     'stoic' : IDL.Principal,
   });
+  const AuthRequest = IDL.Variant({ 'authenticate' : Player, 'link' : Player });
+  const AccountId = IDL.Nat;
+  const AccountRecord = IDL.Record({
+    'id' : AccountId,
+    'alias' : IDL.Opt(IDL.Text),
+    'plugAddress' : IDL.Opt(IDL.Principal),
+    'stoicAddress' : IDL.Opt(IDL.Principal),
+    'primaryWallet' : Player,
+    'flavorText' : IDL.Opt(IDL.Text),
+    'avatar' : IDL.Opt(IDL.Text),
+  });
+  const AuthResponse = IDL.Variant({
+    'ok' : IDL.Record({ 'message' : IDL.Text, 'account' : AccountRecord }),
+    'err' : IDL.Record({ 'message' : IDL.Text }),
+    'pendingDuplicate' : IDL.Record({
+      'accounts' : IDL.Tuple(AccountRecord, AccountRecord),
+      'message' : IDL.Text,
+    }),
+    'pendingConfirmation' : IDL.Record({ 'message' : IDL.Text }),
+  });
+  const Result_1 = IDL.Variant({ 'ok' : AccountRecord, 'err' : IDL.Null });
+  const GamePrincipal = IDL.Principal;
   const Score = IDL.Tuple(Player, IDL.Nat);
   const Metadata = IDL.Record({
     'name' : IDL.Text,
@@ -44,9 +65,21 @@ export const idlFactory = ({ IDL }) => {
     'status_code' : IDL.Nat16,
   });
   const Result = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
+  const UpdateRequest = IDL.Record({
+    'alias' : IDL.Opt(IDL.Text),
+    'primaryWallet' : IDL.Opt(Player),
+    'flavorText' : IDL.Opt(IDL.Text),
+    'avatar' : IDL.Opt(IDL.Text),
+  });
+  const UpdateResponse = IDL.Variant({
+    'ok' : AccountRecord,
+    'err' : IDL.Text,
+  });
   const Metascore = IDL.Service({
     'addAdmin' : IDL.Func([IDL.Principal], [], []),
+    'authenticateAccount' : IDL.Func([AuthRequest], [AuthResponse], []),
     'cron' : IDL.Func([], [], []),
+    'getAccount' : IDL.Func([IDL.Nat], [Result_1], ['query']),
     'getGameScores' : IDL.Func(
         [GamePrincipal, IDL.Opt(IDL.Nat), IDL.Opt(IDL.Nat)],
         [IDL.Vec(Score)],
@@ -85,6 +118,7 @@ export const idlFactory = ({ IDL }) => {
     'removeAdmin' : IDL.Func([IDL.Principal], [], []),
     'scoreUpdate' : IDL.Func([IDL.Vec(Score)], [], []),
     'unregister' : IDL.Func([GamePrincipal], [], []),
+    'updateAccount' : IDL.Func([UpdateRequest], [UpdateResponse], []),
   });
   return Metascore;
 };
