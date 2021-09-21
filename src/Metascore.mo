@@ -28,6 +28,8 @@ module {
     // Metadata of a game.
     public type Metadata = {
         name : Text; // Name of the game.
+        playUrl : Text; // A URL where users can play the game.
+        flavorText : ?Text; // Some brief flavor text about the game.
         // TODO: add more fields (e.g. genre, ...)
     };
 
@@ -42,7 +44,8 @@ module {
         // Methods that needs to be called to register a new game.
         // Can be called by any principal account. a game canister will register
         // itself by calling the callback given in 'metascoreRegisterSelf'.
-        register : (GamePrincipal) -> async Result.Result<(), Text>;
+        register    : shared (GamePrincipal) -> async Result.Result<(), Text>;
+        unregister  : shared (GamePrincipal) -> async Result.Result<(), Text>;
 
         // Endpoint to send score updates to.
         scoreUpdate : shared ([Score]) -> async ();

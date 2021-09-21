@@ -10,6 +10,14 @@ module {
         #plug  : Principal;
     };
 
+    // Unpacks the given player to its principal identifier.
+    public func unpack(player : Player) : Principal {
+        switch (player) {
+            case (#stoic(p)) { p; };
+            case (#plug(p))  { p; };
+        };
+    };
+
     // Checks whether two players are equal by comparing their principal IDs.
     public let equal = func (a : Player, b : Player) : Bool {
         switch (a, b) {

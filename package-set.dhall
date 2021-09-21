@@ -9,7 +9,12 @@ let additions = [
   },
   { name = "sorted"
   , repo = "https://github.com/aviate-labs/sorted.mo"
-  , version = "v0.1.2"
+  , version = "v0.1.3"
+  , dependencies = ["base"]
+  },
+  { name = "queue"
+  , repo = "https://github.com/aviate-labs/queue.mo"
+  , version = "v0.1.1"
   , dependencies = ["base"]
   }
 ] : List Package

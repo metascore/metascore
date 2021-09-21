@@ -12,6 +12,7 @@ import type {
 } from './generated/metascore.did.d';
 
 const STAGING_PRINCIPAL = 'rl4ub-oqaaa-aaaah-qbi3a-cai';
+const PRODUCTION_PRINCIPAL = 'tzvxm-jqaaa-aaaaj-qabga-cai';
 
 // Satisfy dfx generated code
 // ...and vite (because it statically replaces things? wtf???)
@@ -30,6 +31,22 @@ interface MetascoreQuery {
     getOverallMetascore: Metascore['getOverallMetascore'];
     // Returns a list of all games.
     getGames: Metascore['getGames'];
+    // Returns scores for a game.
+    getGameScores: Metascore['getGameScores'];
+    // Returns total number of scores.
+    getScoreCount: Metascore['getScoreCount'];
+    // Returns total number of players.
+    getPlayerCount: Metascore['getPlayerCount'];
+    // Returns metascore for given percentil.
+    getPercentileMetascore: Metascore['getPercentileMetascore'];
+    // Returns list of overall metascores.
+    getMetascores: Metascore['getMetascores'];
+    // Allows users to authenticate with accounts.
+    authenticateAccount: Metascore['authenticateAccount'];
+    // Returns an account by id.
+    getAccount: Metascore['getAccount'];
+    // Allow users to update their accounts.
+    updateAccount: Metascore['updateAccount'];
 };
 
 const queryIdlFactory = ({ IDL } : any) => {
@@ -43,17 +60,17 @@ const queryIdlFactory = ({ IDL } : any) => {
     });
 };
 
-const createActor = () => {
+const createActor = (agent?: HttpAgent, canisterId = STAGING_PRINCIPAL) => {
     const options : {
         agentOptions : HttpAgentOptions;
         actorOptions : ActorConfig;
     } = {
         agentOptions: {host: 'https://raw.ic0.app'},
         actorOptions: {
-            canisterId: STAGING_PRINCIPAL
+            canisterId
         },
     };
-    const agent = new HttpAgent({ ...options?.agentOptions });
+    agent = agent || new HttpAgent({ ...options?.agentOptions });
     return Actor.createActor<MetascoreQuery>(idlFactory, {
         agent,
         ...options?.actorOptions,
@@ -64,6 +81,7 @@ export {
     queryIdlFactory as idlFactory,
     createActor,
     STAGING_PRINCIPAL,
+    PRODUCTION_PRINCIPAL,
 
     GamePrincipal,
     Metadata,
