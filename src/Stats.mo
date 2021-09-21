@@ -1,4 +1,4 @@
-import MPlayer "Player";
+import MAccount "Account";
 import MPublic "Metascore";
 
 module {
@@ -6,21 +6,21 @@ module {
     // It should only be used by front-end code.
     public type PublicInterface = actor {
         // Returns the percentile of a player in a game game.
-        getPercentile : query (MPublic.GamePrincipal, MPlayer.Player) -> async ?Float;
+        getPercentile : query (MPublic.GamePrincipal, MAccount.AccountId) -> async ?Float;
         // Returns the ranking of a player in the given game;
-        getRanking : query (MPublic.GamePrincipal, MPlayer.Player) -> async ?Nat;
+        getRanking : query (MPublic.GamePrincipal, MAccount.AccountId) -> async ?Nat;
         // Returns the Metascore of a player in the given game;
-        getMetascore : query (MPublic.GamePrincipal, MPlayer.Player) -> async Nat;
+        getMetascore : query (MPublic.GamePrincipal, MAccount.AccountId) -> async Nat;
         // Returns the overall Metascore of a player.
-        getOverallMetascore : query (MPlayer.Player) -> async Nat;
+        getOverallMetascore : query (MAccount.AccountId) -> async Nat;
         // Returns a list of all games.
         getGames : query () -> async [(MPublic.GamePrincipal, MPublic.Metadata)];
         // Returns the top n overall players.
-        getTop : query (Nat) -> async [MPublic.Score];
+        getTop : query (Nat) -> async [MAccount.Score];
         // Returns a list of scores for a game.
-        getGameScores : query (MPublic.GamePrincipal, ?Nat, ?Nat) -> async [MPublic.Score];
+        getGameScores : query (MPublic.GamePrincipal, ?Nat, ?Nat) -> async [MAccount.Score];
         // Returns a list of metascores.
-        getMetascores : query (?Nat, ?Nat) -> async [MPublic.Score];
+        getMetascores : query (?Nat, ?Nat) -> async [MAccount.Score];
         // Returns metascore at given percentile.
         getPercentileMetascore : query (Float) -> async Nat;
         // Returns total number of players.
