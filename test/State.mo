@@ -1,6 +1,7 @@
 import Debug "mo:base/Debug";
 import Principal "mo:base/Principal";
 
+import Users "../metascore/Users";
 import State "../metascore/State";
 
 let tarot = Principal.fromText("l2jyf-nqaaa-aaaah-qadha-cai");
@@ -14,15 +15,16 @@ let player2 = 2;
 
 do {
     // Empty state.
-    let state = State.State([
-        (
+    let state = State.State(
+        0, [],
+        [(
             tarot,
             (
                 tarotMetadata,
                 [],
             )
-        )
-    ]);
+        )],
+    );
     state.updateScores(tarot, [
         (player2,  8),
         (player1, 10),
@@ -31,8 +33,9 @@ do {
     assert(state.getMetascore(tarot, player2) ==   650_000_000_000);
 };
 
-let state = State.State([
-    (
+let state = State.State(
+    0, [],
+    [(
         tarot,
         (
             tarotMetadata,
@@ -41,8 +44,8 @@ let state = State.State([
                 (player2,  8),
             ],
         )
-    )
-]);
+    )],
+);
 
 func testInitialState() {
     assert(state.globalLeaderboard.size() == 2);

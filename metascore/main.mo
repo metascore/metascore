@@ -26,24 +26,20 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     // Time since last cron call.
     private stable var lastCron : Int = Time.now();
 
-    // Map of registered game canisters.
-    private stable var games : [State.StableGame] = [];
-    private let state = State.State(games);
-
+    // The state: games and user accounts.
     private stable var nextAccountId = 0;
     private stable var accounts : [Users.StableAccount] = [];
-    private let users = Users.Users(nextAccountId, accounts);
+    private stable var games : [State.StableGame] = [];
+    private let state = State.State(nextAccountId, accounts, games);
 
     system func preupgrade() {
         games    := State.toStable(state);
-
-        nextAccountId := users.nextAccountId;
-        accounts := Users.toStable(users);
+        nextAccountId := state.users.nextAccountId;
+        accounts := Users.toStable(state.users);
     };
 
     system func postupgrade() {
         games         := [];
-  
         nextAccountId := 0;
         accounts      := [];
     };
@@ -130,7 +126,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         Array.map<MPublic.Score, MAccount.Score>(
             scores,
             func ((player, score) : MPublic.Score) : MAccount.Score {
-                let (account, _) = users.ensureAccount(player);
+                let (account, _) = state.users.ensureAccount(player);
                 (account.id, score);
             },
         );
@@ -191,16 +187,23 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     // ◣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◢
 
     public query func getAccount(id : MAccount.AccountId) : async Result.Result<MAccount.Account, ()> {
-        switch (users.accounts.get(id)) {
+        switch (state.users.accounts.get(id)) {
             case (null) { #err(); };
             case (? a)  { #ok(a); };
+        };
+    };
+
+    public query func getAccountDetails(id : MAccount.AccountId) : async Result.Result<MAccount.AccountDetails, ()> {
+        switch (state.users.accounts.get(id)) {
+            case (null) { #err(); };
+            case (? a)  { #ok(MAccount.getDetails(a)); };
         };
     };
 
     public shared({caller}) func updateAccount(
         req : MAccount.UpdateRequest,
     ) : async MAccount.UpdateResponse {
-        switch (users.getAccountByPrincipal(caller)) {
+        switch (state.users.getAccountByPrincipal(caller)) {
             case (null)      {
                 #err("account not found: " # Principal.toText(caller));
             };
@@ -217,7 +220,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
                     };
                     stoicAddress  = account.stoicAddress;
                 };
-                users.putAccount(updatedAccount);
+                state.users.putAccount(updatedAccount);
                 #ok(updatedAccount);
             };
         };
@@ -230,7 +233,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
             case (#authenticate(playerId)) {
                 let principal = MPlayer.unpack(playerId);
                 if (not Principal.equal(principal, caller)) return #forbidden;
-                let (account, new) = users.ensureAccount(playerId);
+                let (account, new) = state.users.ensureAccount(playerId);
                 #ok({
                     message = switch (new) {
                         case (true)  "created new account";
@@ -259,17 +262,17 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
                 };
 
                 // Check whether the two players can be linked.
-                let account = switch (users.canBeLinked(player, newPlayer)) {
+                let account = switch (state.users.canBeLinked(player, newPlayer)) {
                     case (#err(msg))    { return #err({ message=msg; })};
                     case (#ok(account)) { account; };
                 };
 
 
                 let newPrincipal = MPlayer.unpack(newPlayer);
-                switch (users.getLink(caller)) {
+                switch (state.users.getLink(caller)) {
                     case (null) {
                         // Initial request, create link.
-                        users.links.push((newPrincipal, caller));
+                        state.users.links.push((newPrincipal, caller));
                         #pendingConfirmation({
                             message = "awaiting confirmation from: " # Principal.toText(newPrincipal);
                         });
@@ -277,17 +280,17 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
                     case (? link) {
                         if (not Principal.equal(link, newPrincipal)) {
                             // Pending link was not the new player.
-                            users.deleteLink(caller); // Do we still need this?
-                            users.links.push((newPrincipal, caller));
+                            state.users.deleteLink(caller); // Do we still need this?
+                            state.users.links.push((newPrincipal, caller));
                             return #pendingConfirmation({
                                 message = "awaiting confirmation from: " # Principal.toText(newPrincipal);
                             });
                         };
 
                         // We already get an (new) account from `canBeLinked`.
-                        users.deleteLink(caller);
-                        users.deleteLink(newPrincipal);
-                        let newAccount = users.link(account, newPlayer);
+                        state.users.deleteLink(caller);
+                        state.users.deleteLink(newPrincipal);
+                        let newAccount = state.users.link(account, newPlayer);
                         #ok({
                             message = "linked principals to account";
                             account = newAccount;
@@ -359,12 +362,29 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         state.getGameScores(game, count, offset);
     };
 
+    // Returns a detailed list of scores for a game.
+    public query func getDetailedGameScores(
+        game    : MPublic.GamePrincipal,
+        count   : ?Nat,
+        offset  : ?Nat,
+    ) : async [MAccount.DetailedScore] {
+        state.getDetailedGameScores(game, count, offset);
+    };
+
     // Returns a list of overall metascores.
     public query func getMetascores(
         count   : ?Nat,
         offset  : ?Nat,
     ) : async [MAccount.Score] {
         state.getMetascores(count, offset);
+    };
+
+    // Returns a detailed list of overall metascores.
+    public query func getDetailedMetascores(
+        count   : ?Nat,
+        offset  : ?Nat,
+    ) : async [MAccount.DetailedScore] {
+        state.getDetailedMetascores(count, offset);
     };
 
     // Returns the overall metascore for the given percentile.

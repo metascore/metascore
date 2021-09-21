@@ -12,6 +12,7 @@ import Principal "mo:base/Principal";
 import SMap "mo:sorted/Map";
 
 import Interface "Interface";
+import Users "Users";
 
 import MAccount "../src/Account";
 import MPlayer "../src/Player";
@@ -24,6 +25,7 @@ module {
     );
     
     // Converts the state to its corresponing stable form.
+    // NOTE: does NOT include users!
     public func toStable(s : State) : [StableGame] {
         var games : [StableGame] = [];
         for ((gameId, accountScores) in s.gameLeaderboards.entries()) {
@@ -59,7 +61,9 @@ module {
     };
 
     public class State(
-        state : [StableGame],
+        nextAccountId : MAccount.AccountId,
+        accounts      : [Users.StableAccount],
+        state         : [StableGame],
     ) : Interface.StateInterface {        
         // Tuple of a global scores and individual scores per game.
         private type GlobalScores = (
@@ -77,6 +81,9 @@ module {
             };
             score;
         };
+
+        // User account state.
+        public let users = Users.Users(nextAccountId, accounts);
 
         // [🗄] A map of players to their global scores.
         public let globalLeaderboard : SMap.SortedValueMap<MAccount.AccountId, GlobalScores> = SMap.SortedValueMap(
@@ -342,9 +349,44 @@ module {
                         Nat.min(c, accountScores.size()),
                         func (i : Nat) : MAccount.Score {
                             switch (accountScores.getValue(i + o)) {
-                                case (? s)  { s; };
-                                case (null) { (0, 0); };
+                                case (? score) { score;  };
+                                case (null)    { (0, 0); };
                             };
+                        },
+                    );
+                };
+            };
+        };
+
+        public func getDetailedGameScores(gameId : MPublic.GamePrincipal, count : ?Nat, offset : ?Nat) : [MAccount.DetailedScore] {
+            let c : Nat = Option.get<Nat>(count,  100);
+            let o : Nat = Option.get<Nat>(offset, 0  );
+            switch (gameLeaderboards.get(gameId)) {
+                case (null) { []; }; // Game not found.
+                case (? accountScores) {
+                    Array.tabulate<MAccount.DetailedScore>(
+                        Nat.min(c, accountScores.size()),
+                        func (i : Nat) : MAccount.DetailedScore {
+                            switch (accountScores.getIndex(i + o)) {
+                                case (null) {};
+                                case (? (accountId, (_, score))) {
+                                    switch (users.accounts.get(accountId)) {
+                                        case (null) {};
+                                        case (? account) {
+                                            return (
+                                                MAccount.getDetails(account),
+                                                score,
+                                            );
+                                        };
+                                    };
+                                };
+                            };
+                            ({
+                                alias      = null;
+                                avatar     = null;
+                                flavorText = ?"Dummy account";
+                                id         = 0;
+                            }, 0);
                         },
                     );
                 };
@@ -381,6 +423,36 @@ module {
                             (accountId, score);
                         };
                     };
+                },
+            );
+        };
+
+        public func getDetailedMetascores(count : ?Nat, offset : ?Nat) : [MAccount.DetailedScore] {
+            let c : Nat = Option.get<Nat>(count,  100);
+            let o : Nat = Option.get<Nat>(offset, 0  );
+            Array.tabulate<MAccount.DetailedScore>(
+                Nat.min(c, globalLeaderboard.size()),
+                func (i : Nat) : MAccount.DetailedScore {
+                    switch (globalLeaderboard.getIndex(i + o)) {
+                        case (null) {};
+                        case (? (accountId, (score, _))) {
+                            switch (users.accounts.get(accountId)) {
+                                case (null) {};
+                                case (? account) {
+                                    return (
+                                        MAccount.getDetails(account),
+                                        score,
+                                    );
+                                };
+                            };
+                        };
+                    };
+                    ({
+                        alias      = null;
+                        avatar     = null;
+                        flavorText = ?"Dummy account";
+                        id         = 0;
+                    }, 0);
                 },
             );
         };
