@@ -1,4 +1,5 @@
 import Array "mo:base/Array";
+import EQueue "mo:queue/EvictingQueue";
 import Float "mo:base/Float";
 import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
@@ -105,6 +106,9 @@ module {
             0, Principal.equal, Principal.hash,
         );
 
+        // A queue of recent score update requests.
+        public let scoreUpdateLog = EQueue.EvictingQueue<(MPublic.GamePrincipal, MAccount.Score)>(100);
+
         // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
         // | THE Metascore calculation... 🏁                                   |
         // ◣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◢
@@ -181,6 +185,11 @@ module {
         // ◣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◢
 
         public func updateScores(gameId : MPublic.GamePrincipal, scores : [MAccount.Score]) {
+            // Log score update requsts.
+            for (score in Iter.fromArray(scores)) {
+                scoreUpdateLog.push((gameId, score));
+            };
+
             var update = false;
             for (score in scores.vals()) {
                 if (_updateScore(gameId, score)) update := true;
@@ -191,6 +200,8 @@ module {
         };
 
         public func updateScore(gameId : MPublic.GamePrincipal, score : MAccount.Score) {
+            // Log score update requsts.
+            scoreUpdateLog.push((gameId, score));
             if (_updateScore(gameId, score)) _recalculate(gameId);
         };
 

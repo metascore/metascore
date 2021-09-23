@@ -400,6 +400,11 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         state.getScoreCount();
     };
 
+    // Drain recent score update requests.
+    public query func drainScoreUpdateLog() : async [(MPublic.GamePrincipal, MAccount.Score)] {
+        Iter.toArray(state.scoreUpdateLog.vals());
+    };
+
     public query func http_request(
         r : AssetStorage.HttpRequest,
     ) : async AssetStorage.HttpResponse {
