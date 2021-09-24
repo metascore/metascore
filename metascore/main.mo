@@ -171,7 +171,14 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         };
     };
 
-    // Gets all scores form every game.
+    // Pull scores for one game.
+    public shared ({ caller }) func queryGameScores(gameId : MPublic.GamePrincipal) : async () {
+        assert(_isAdmin(caller));
+        let scores = await getScores(gameId);
+        state.updateScores(gameId, scores);
+    };
+
+    // Gets all scores from every game.
     // Currently only used by the cron.
     private func queryAllScores() : async () {
         for ((gameId, _) in state.games.entries()) {
