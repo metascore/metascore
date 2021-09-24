@@ -88,6 +88,36 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         return false;
     };
 
+    // Query full account.
+    // @auth: admin
+    public shared query ({ caller }) func getAccount(id : MAccount.AccountId) : async Result.Result<MAccount.Account, ()> {
+        assert(_isAdmin(caller));
+        switch (state.users.accounts.get(id)) {
+            case (null) { #err(); };
+            case (? a)  { #ok(a); };
+        };
+    };
+
+    // Query all full accounts.
+    // @auth: admin
+    public shared query ({ caller }) func getAccounts() : async [MAccount.Account] {
+        assert(_isAdmin(caller));
+        var accounts : [MAccount.Account] = [];
+        for (account in state.users.accounts.entries()) {
+            accounts := Array.append<MAccount.Account>(accounts, [account.1]);
+        };
+        return accounts;
+    };
+
+    // Load accounts from a backup.
+    // @auth: admin
+    public shared ({ caller }) func loadAccounts(accounts : [MAccount.Account]) : async () {
+        assert(_isAdmin(caller));
+        for (account in Iter.fromArray(accounts)) {
+            state.users.putAccount(account);
+        }
+    };
+
     // Register a new game. The metascore canister will check whether the given
     // principal ID (canister) implements the Metascore game interface. If so,
     // it will query the metascoreRegisterSelf endpoint.
@@ -190,13 +220,6 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
     // | User Account Management                                               |
     // ◣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◢
-
-    public query func getAccount(id : MAccount.AccountId) : async Result.Result<MAccount.Account, ()> {
-        switch (state.users.accounts.get(id)) {
-            case (null) { #err(); };
-            case (? a)  { #ok(a); };
-        };
-    };
 
     public query func getAccountDetails(id : MAccount.AccountId) : async Result.Result<MAccount.AccountDetails, ()> {
         switch (state.users.accounts.get(id)) {
