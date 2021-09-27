@@ -569,5 +569,11 @@ module {
                 },
             );
         };
+
+        public func loadGames(fixture : [(MPublic.GamePrincipal, MPublic.Metadata)]) : () {
+            for ((gameId, metadata) in Iter.fromArray(fixture)) {
+                games.put(gameId, metadata);
+            }
+        };
     };
 };

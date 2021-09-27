@@ -111,11 +111,18 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
 
     // Load accounts from a backup.
     // @auth: admin
-    public shared ({ caller }) func loadAccounts(accounts : [MAccount.Account]) : async () {
+    public shared ({ caller }) func loadAccounts(backup : [MAccount.Account]) : async () {
         assert(_isAdmin(caller));
-        for (account in Iter.fromArray(accounts)) {
+        for (account in Iter.fromArray(backup)) {
             state.users.putAccount(account);
         }
+    };
+
+    // Load games from a backup.
+    // @auth: admin
+    public shared ({ caller }) func loadGames(backup : [(MPublic.GamePrincipal, MPublic.Metadata)]) : async () {
+        assert(_isAdmin(caller));
+        state.loadGames(backup);
     };
 
     // Register a new game. The metascore canister will check whether the given
