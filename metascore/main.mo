@@ -8,9 +8,11 @@ import HashMap "mo:base/HashMap";
 import Int "mo:base/Int";
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
+import O "mo:sorted/Order";
 import Order "mo:base/Order";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
+import SMap "mo:sorted/Map";
 import Time "mo:base/Time";
 import Text "mo:base/Text";
 
@@ -122,7 +124,65 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     // @auth: admin
     public shared ({ caller }) func loadGames(backup : [(MPublic.GamePrincipal, MPublic.Metadata)]) : async () {
         assert(_isAdmin(caller));
-        state.loadGames(backup);
+        for ((gameId, metadata) in Iter.fromArray(backup)) {
+            state.games.put(gameId, metadata);
+        }
+    };
+
+    // Load game scores from a backup.
+    // @auth: admin
+    public shared ({ caller }) func loadGameScores(game : MPublic.GamePrincipal, scores : [MPublic.Score]) : async () {
+        assert(_isAdmin(caller));
+        let accountScores = switch (state.gameLeaderboards.get(game)) {
+            case (null) {
+                SMap.SortedValueMap<MAccount.AccountId, MAccount.Score>(
+                    0, Nat.equal, Hash.hash,
+                    O.Descending(State.compareAccountScores),
+                );
+            };
+            case (? ps) { ps; };
+        };
+        for ((a, s) in mapScoresToAccounts(scores).vals()) {
+            switch (accountScores.get(a)) {
+                case (? (_, os)) {
+                    // Score is already the same, no need to update anything.
+                    if (s > os) accountScores.put(a, (a, s));
+                };
+                case null accountScores.put(a, (a, s));
+            };
+        };
+        state.gameLeaderboards.put((game, accountScores));
+    };
+
+    // Load game scores from a backup.
+    // @auth: admin
+    public shared ({ caller }) func loadAccountScores(game : MPublic.GamePrincipal, scores : [MAccount.Score]) : async () {
+        assert(_isAdmin(caller));
+        let accountScores = switch (state.gameLeaderboards.get(game)) {
+            case (null) {
+                SMap.SortedValueMap<MAccount.AccountId, MAccount.Score>(
+                    0, Nat.equal, Hash.hash,
+                    O.Descending(State.compareAccountScores),
+                );
+            };
+            case (? ps) { ps; };
+        };
+        for ((a, s) in Iter.fromArray(scores)) {
+            switch (accountScores.get(a)) {
+                case (? (_, os)) {
+                    if (s > os) accountScores.put(a, (a, s));
+                };
+                case null accountScores.put(a, (a, s));
+            };
+        };
+        state.gameLeaderboards.put((game, accountScores));
+    };
+
+    // Calculate overall scores for a game.
+    // @auth: admin
+    public shared ({ caller }) func calculateMetascores(game : MPublic.GamePrincipal, batch : Nat) : async () {
+        assert(_isAdmin(caller));
+        state.recalculate(game, batch);
     };
 
     // Register a new game. The metascore canister will check whether the given
@@ -156,10 +216,10 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
 
     private func getScores(gameId : MPublic.GamePrincipal) : async [MAccount.Score] {
         let game : MPublic.GameInterface = actor(Principal.toText(gameId));
-        mapScores(await game.metascoreScores());
+        mapScoresToAccounts(await game.metascoreScores());
     };
 
-    private func mapScores(scores : [MPublic.Score]) : [MAccount.Score] {
+    private func mapScoresToAccounts(scores : [MPublic.Score]) : [MAccount.Score] {
         Array.map<MPublic.Score, MAccount.Score>(
             scores,
             func ((player, score) : MPublic.Score) : MAccount.Score {
@@ -189,7 +249,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
                 assert(false);
             };
             case (? _)  {
-                state.updateScores(caller, mapScores(scores));
+                state.updateScores(caller, mapScoresToAccounts(scores));
             };
         };
     };

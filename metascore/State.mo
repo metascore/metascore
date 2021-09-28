@@ -19,6 +19,8 @@ import MAccount "../src/Account";
 import MPlayer "../src/Player";
 import MPublic "../src/Metascore";
 
+import Debug = "mo:base/Debug";
+
 module {
     public type StableGame = (
         MPublic.GamePrincipal,
@@ -151,33 +153,33 @@ module {
             // Game Metadata.
             games.put(gameId, metadata);
             // Game Leaderboards.
-            let accountScores = SMap.SortedValueMap<MAccount.AccountId, MAccount.Score>(
-                scores.size(), Nat.equal, Hash.hash,
-                O.Descending(compareAccountScores),
-            );
-            for ((a, s) in scores.vals()) {
-                accountScores.put(a, (a, s));
-            };
-            gameLeaderboards.put((gameId, accountScores));
+            // let accountScores = SMap.SortedValueMap<MAccount.AccountId, MAccount.Score>(
+            //     scores.size(), Nat.equal, Hash.hash,
+            //     O.Descending(compareAccountScores),
+            // );
+            // for ((a, s) in scores.vals()) {
+            //     accountScores.put(a, (a, s));
+            // };
+            // gameLeaderboards.put((gameId, accountScores));
 
             // Global Leaderboard.
-            for ((accountId, s) in scores.vals()) {
-                let (g, ss) : GlobalScores = switch (globalLeaderboard.get(accountId)) {
-                    case (null) {
-                        (0, HashMap.HashMap<MPublic.GamePrincipal, Nat>(
-                            0, Principal.equal, Principal.hash,
-                        ));
-                    };
-                    case (? a) { a; };
-                };
-                // 1. Add new score to scores.
-                let ms = metascore(gameId, accountId, s);
-                ss.put(gameId, s);
-                globalLeaderboard.put(accountId, (
-                    g + ms, // 2. Add score to global total.
-                    ss,
-                ));
-            };
+            // for ((accountId, s) in scores.vals()) {
+            //     let (g, ss) : GlobalScores = switch (globalLeaderboard.get(accountId)) {
+            //         case (null) {
+            //             (0, HashMap.HashMap<MPublic.GamePrincipal, Nat>(
+            //                 0, Principal.equal, Principal.hash,
+            //             ));
+            //         };
+            //         case (? a) { a; };
+            //     };
+            //     // 1. Add new score to scores.
+            //     let ms = metascore(gameId, accountId, s);
+            //     ss.put(gameId, s);
+            //     globalLeaderboard.put(accountId, (
+            //         g + ms, // 2. Add score to global total.
+            //         ss,
+            //     ));
+            // };
         };
 
         // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
@@ -185,6 +187,7 @@ module {
         // ◣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◢
 
         public func updateScores(gameId : MPublic.GamePrincipal, scores : [MAccount.Score]) {
+            // NOTE: "heap out of bounds" error on this method with 3,682 records
             // Log score update requsts.
             for (score in Iter.fromArray(scores)) {
                 scoreUpdateLog.push((gameId, score));
@@ -196,16 +199,20 @@ module {
             };
             // The top score has changed, so all scores change...
             // [🗑] Recalculating everything...
-            if (update) _recalculate(gameId);
+            // NOTE: heap error isolated here
+            // if (update) recalculate(gameId);
         };
 
         public func updateScore(gameId : MPublic.GamePrincipal, score : MAccount.Score) {
             // Log score update requsts.
             scoreUpdateLog.push((gameId, score));
-            if (_updateScore(gameId, score)) _recalculate(gameId);
+            // if (_updateScore(gameId, score)) recalculate(gameId);
         };
 
-        private func _recalculate(gameId : MPublic.GamePrincipal) {
+        public func recalculate(gameId : MPublic.GamePrincipal, batch : Nat) {
+            // NOTE: Causes heap errors at ~3,000 scores
+            let range = ((batch - 1) * 1000, batch * 1000);
+            Debug.print("Batch " # Nat.toText(range.0) # ", " # Nat.toText(range.1));
             switch (gameLeaderboards.get(gameId)) {
                 case (null) {
                     // [💀] Unreachable: should not happen.
@@ -213,7 +220,10 @@ module {
                     assert(false);
                 };
                 case (? accountScores) {
-                    for ((_, (accountId, score)) in accountScores.entries()) {
+                    var i = 0;
+                    label l for ((_, (accountId, score)) in accountScores.entries()) {
+                        i := i + 1;
+                        if (i < range.0 + 1 or i > range.1) continue l;
                         switch (globalLeaderboard.get(accountId)) {
                             case (null) {
                                 // Player has no global scores yet.
@@ -241,6 +251,7 @@ module {
             };
         };
 
+        // Stores an updated game score.
         // Returns whether the global scores need to be recalculated.
         private func _updateScore(gameId : MPublic.GamePrincipal, (accountId, score) : MAccount.Score) : Bool {
             let accountScores = switch (gameLeaderboards.get(gameId)) {
@@ -568,12 +579,6 @@ module {
                     };
                 },
             );
-        };
-
-        public func loadGames(fixture : [(MPublic.GamePrincipal, MPublic.Metadata)]) : () {
-            for ((gameId, metadata) in Iter.fromArray(fixture)) {
-                games.put(gameId, metadata);
-            }
         };
     };
 };
