@@ -1,22 +1,2 @@
-let upstream = https://github.com/dfinity/vessel-package-set/releases/download/mo-0.6.7-20210818/package-set.dhall sha256:c4bd3b9ffaf6b48d21841545306d9f69b57e79ce3b1ac5e1f63b068ca4f89957
-let Package = { name : Text, version : Text, repo : Text, dependencies : List Text }
-
-let additions = [
-  { name = "http"
-  , repo = "https://github.com/aviate-labs/asset-storage.mo"
-  , version = "asset-storage-0.7.0"
-  , dependencies = ["base"]
-  },
-  { name = "sorted"
-  , repo = "https://github.com/aviate-labs/sorted.mo"
-  , version = "v0.1.3"
-  , dependencies = ["base"]
-  },
-  { name = "queue"
-  , repo = "https://github.com/aviate-labs/queue.mo"
-  , version = "v0.1.1"
-  , dependencies = ["base"]
-  }
-] : List Package
-
-in  upstream # additions
+let upstream = https://github.com/aviate-labs/package-set/releases/download/v0.1.0/package-set.dhall sha256:c3c8109cb725af1f6c2f879b8383e347d76c95b1cc743a88fe88b82c198fa06a
+in  upstream

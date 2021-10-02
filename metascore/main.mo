@@ -1,5 +1,5 @@
 import Array "mo:base/Array";
-import AssetStorage "mo:http/AssetStorage";
+import AssetStorage "mo:asset-storage/AssetStorage";
 import Blob "mo:base/Blob";
 import Float "mo:base/Float";
 import Error "mo:base/Error";

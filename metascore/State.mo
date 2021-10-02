@@ -211,7 +211,7 @@ module {
 
         public func recalculate(gameId : MPublic.GamePrincipal, batch : Nat) {
             // NOTE: Causes heap errors at ~3,000 scores
-            let range = ((batch - 1) * 1000, batch * 1000);
+            let range = ((batch - 1 : Nat) * 1000, batch * 1000);
             Debug.print("Batch " # Nat.toText(range.0) # ", " # Nat.toText(range.1));
             switch (gameLeaderboards.get(gameId)) {
                 case (null) {
