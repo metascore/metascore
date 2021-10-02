@@ -133,6 +133,25 @@ shared({caller = owner}) actor class Accounts() : async MAccount.PublicInterface
         admins.hasRole(caller, Roles.ALL);
     };
 
+    // Adds a new principal as an admin.
+    // @auth: admin
+    public shared({caller}) func addAdmin(p : Principal) : async () {
+        admins.addUserWithRoles(caller, p, [Roles.ALL]);
+    };
+
+    // Removes the given principal from the list of admins.
+    // @auth: admin
+    public shared({caller}) func removeAdmin(p : Principal) : async () {
+        admins.removeUser(caller, p);
+    };
+
+    // Check whether the given principal is an admin.
+    // @auth: admin
+    public query({caller}) func isAdmin(p : Principal) : async Bool {
+        assert(_isAdmin(caller));
+        admins.hasRole(p, Roles.ALL);
+    };
+
     // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
     // | Pre/Post Upgrade                                                      |
     // ◣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◢
