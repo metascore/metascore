@@ -12,8 +12,9 @@ jobs:
       - uses: actions/checkout@v2
       - uses: aviate-labs/setup-dfx@v0.2.3
         with:
+          dfx-version: 0.8.1
           vessel-version: 0.6.2
-      - run: for i in example/*.mo   ; do $(vessel bin)/moc $(vessel sources) --check $i ; done
-      - run: for i in metascore/*.mo ; do $(vessel bin)/moc $(vessel sources) --check $i ; done
-      - run: for i in src/*.mo       ; do $(vessel bin)/moc $(vessel sources) --check $i ; done
-      - run: for i in test/*.mo      ; do $(vessel bin)/moc $(vessel sources) -r $i ; done
+      - run: for i in example/*.mo   ; do $(dfx cache show)/moc $(vessel sources) --check $i ; done
+      - run: for i in metascore/*.mo ; do $(dfx cache show)/moc $(vessel sources) --check $i ; done
+      - run: for i in src/*.mo       ; do $(dfx cache show)/moc $(vessel sources) --check $i ; done
+      - run: for i in test/*.mo      ; do $(dfx cache show)/moc $(vessel sources) -r $i ; done
