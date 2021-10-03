@@ -1,3 +1,4 @@
+import Array "mo:base/Array";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import Roles "mo:auth/Roles";
@@ -5,6 +6,7 @@ import Roles "mo:auth/Roles";
 import Users "Users";
 
 import MAccount "../src/Account";
+import MPublic "../src/Metascore";
 import MPlayer "../src/Player";
 
 shared({caller = owner}) actor class Accounts() : async MAccount.PublicInterface = {
@@ -87,13 +89,38 @@ shared({caller = owner}) actor class Accounts() : async MAccount.PublicInterface
         };
     };
     
-    public query({ caller }) func getAccount(
+    public query({caller}) func getAccount(
         accountId : MAccount.AccountId,
     ) : async Result.Result<MAccount.Account, ()> {
         switch (users.accounts.get(accountId)) {
             case (null) { #err(); };
             case (? a)  { #ok(a); };
         };
+    };
+
+    public query({caller}) func getAccountDetails(
+        accountId : MAccount.AccountId,
+    ) : async Result.Result<MAccount.AccountDetails, ()> {
+        switch (users.accounts.get(accountId)) {
+            case (null) { #err(); };
+            case (? a)  { #ok(MAccount.getDetails(a)); };
+        };
+    };
+
+    public query({caller}) func getAccountsFromScores(
+        scores : [MPublic.Score],
+    ) : async [MAccount.Score] {
+        let accounts = Array.init<(MAccount.AccountId, Nat)>(scores.size(), (0 , 0));
+        for (i in scores.keys()) {
+            let (playerId, score) = scores[i];
+            switch (users.getAccountByPrincipal(MPlayer.unpack(playerId))) {
+                case (null)      {};
+                case (? account) {
+                    accounts[i] := (account.id, score);
+                };
+            };
+        };
+        Array.freeze(accounts);
     };
     
     public shared({caller}) func updateAccount(
@@ -131,6 +158,17 @@ shared({caller = owner}) actor class Accounts() : async MAccount.PublicInterface
 
     private func _isAdmin(caller : Principal) : Bool {
         admins.hasRole(caller, Roles.ALL);
+    };
+
+    // Load accounts from a backup.
+    // @auth: admin
+    public shared({caller}) func loadAccounts(
+        backup : [MAccount.Account],
+    ) : async () {
+        assert(_isAdmin(caller));
+        for (account in backup.vals()) {
+            users.putAccount(account);
+        };
     };
 
     // Adds a new principal as an admin.

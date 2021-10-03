@@ -24,18 +24,10 @@ module {
         getGames               : query ()                                          -> async [(MPublic.GamePrincipal, MPublic.Metadata)];
         getTop                 : query (n : Nat)                                   -> async [MAccount.Score];
         getGameScores          : query (MPublic.GamePrincipal, ?Nat, ?Nat)         -> async [MAccount.Score];
-        getDetailedGameScores  : query (MPublic.GamePrincipal, ?Nat, ?Nat)         -> async [MAccount.DetailedScore];
         getMetascores          : query (?Nat, ?Nat)                                -> async [MAccount.Score];
-        getDetailedMetascores  : query (?Nat, ?Nat)                                -> async [MAccount.DetailedScore];
         getPercentileMetascore : query (Float)                                     -> async Nat;
         getPlayerCount         : query ()                                          -> async Nat;
         getScoreCount          : query ()                                          -> async Nat;
-
-        // AccountInterface (see public/Account.mo)
-        getAccount          : query  (MAccount.AccountId)             -> async Result.Result<MAccount.Account, ()>;
-        getAccountDetails   : query  (MAccount.AccountId)             -> async Result.Result<MAccount.AccountDetails, ()>;
-        updateAccount       : shared (MAccount.UpdateRequest)         -> async MAccount.UpdateResponse;
-        authenticateAccount : shared (MAccount.AuthenticationRequest) -> async MAccount.AuthenticationResponse;
 
         // Internal Interface (used in main.mo).
         registerGame : shared MPublic.Metadata -> async ();
@@ -56,11 +48,17 @@ module {
         getGames               : ()                                          -> [(MPublic.GamePrincipal, MPublic.Metadata)];
         getTop                 : (Nat)                                       -> [MAccount.Score];
         getGameScores          : (MPublic.GamePrincipal, ?Nat, ?Nat)         -> [MAccount.Score];
-        getDetailedGameScores  : (MPublic.GamePrincipal, ?Nat, ?Nat)         -> [MAccount.DetailedScore];
         getMetascores          : (?Nat, ?Nat)                                -> [MAccount.Score];
-        getDetailedMetascores  : (?Nat, ?Nat)                                -> [MAccount.DetailedScore];
         getPercentileMetascore : (Float)                                     -> Nat;
         getPlayerCount         : ()                                          -> Nat;
         getScoreCount          : ()                                          -> Nat;
+    };
+
+    public type AccountsInterface = {
+        getAccount            : query  (MAccount.AccountId)             -> async Result.Result<MAccount.Account, ()>;
+        getAccountDetails     : query  (MAccount.AccountId)             -> async Result.Result<MAccount.AccountDetails, ()>;
+        getAccountsFromScores : query  ([MPublic.Score])                -> async [MAccount.Score];
+        updateAccount         : shared (MAccount.UpdateRequest)         -> async MAccount.UpdateResponse;
+        authenticateAccount   : shared (MAccount.AuthenticationRequest) -> async MAccount.AuthenticationResponse;
     };
 };
