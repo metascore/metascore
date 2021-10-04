@@ -54,7 +54,7 @@ module {
         getScoreCount          : ()                                          -> Nat;
     };
 
-    public type AccountsInterface = {
+    public type AccountsInterface = actor {
         getAccount            : query  (MAccount.AccountId)             -> async Result.Result<MAccount.Account, ()>;
         getAccountDetails     : query  (MAccount.AccountId)             -> async Result.Result<MAccount.AccountDetails, ()>;
         getAccountsFromScores : query  ([MPublic.Score])                -> async [MAccount.Score];

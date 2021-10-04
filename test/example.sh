@@ -3,11 +3,10 @@
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
+BOLD='\033[1m'
 
 bold() {
-    tput bold
-    echo $1
-    tput sgr0
+    echo "${BOLD}$1${NC}"
 }
 
 check() {
@@ -24,11 +23,14 @@ check() {
 bold "| Starting replica."
 dfx start --background --clean > /dev/null 2>&1
 dfx deploy --no-wallet metascore
+metascoreID=$(dfx canister id metascore)
+dfx deploy --no-wallet accounts
+accounts=$(dfx canister id accounts)
+dfx canister --no-wallet call metascore setAccountsCanister "(principal \"${accounts}\")"
 dfx deploy --no-wallet game
+gameID=$(dfx canister id game)
 
 ownerID=$(dfx identity get-principal)
-gameID=$(dfx canister id game)
-metascoreID=$(dfx canister id metascore)
 player1="variant{plug = principal \"ztlax-3lufm-ahpvx-36scg-7b4lf-m34dn-md7or-ltgjf-nhq4k-qqffn-oqe\"}"
 player2="variant{stoic = principal \"k4ltb-urk4m-kdfc4-a2sib-br5ub-gcnep-tkxt2-2oqqa-ldzj2-zvmyw-gqe\"}"
 

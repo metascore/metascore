@@ -14,7 +14,4 @@ jobs:
         with:
           dfx-version: 0.8.1
           vessel-version: 0.6.2
-      - run: for i in example/*.mo   ; do $(dfx cache show)/moc $(vessel sources) --check $i ; done
-      - run: for i in metascore/*.mo ; do $(dfx cache show)/moc $(vessel sources) --check $i ; done
-      - run: for i in src/*.mo       ; do $(dfx cache show)/moc $(vessel sources) --check $i ; done
-      - run: for i in test/*.mo      ; do $(dfx cache show)/moc $(vessel sources) -r $i ; done
+      - run: ./test/test.sh

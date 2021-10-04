@@ -147,33 +147,33 @@ module {
             // Game Metadata.
             games.put(gameId, metadata);
             // Game Leaderboards.
-            // let accountScores = SMap.SortedValueMap<MAccount.AccountId, MAccount.Score>(
-            //     scores.size(), Nat.equal, Hash.hash,
-            //     O.Descending(compareAccountScores),
-            // );
-            // for ((a, s) in scores.vals()) {
-            //     accountScores.put(a, (a, s));
-            // };
-            // gameLeaderboards.put((gameId, accountScores));
+            let accountScores = SMap.SortedValueMap<MAccount.AccountId, MAccount.Score>(
+                scores.size(), Nat.equal, Hash.hash,
+                O.Descending(compareAccountScores),
+            );
+            for ((a, s) in scores.vals()) {
+                accountScores.put(a, (a, s));
+            };
+            gameLeaderboards.put((gameId, accountScores));
 
             // Global Leaderboard.
-            // for ((accountId, s) in scores.vals()) {
-            //     let (g, ss) : GlobalScores = switch (globalLeaderboard.get(accountId)) {
-            //         case (null) {
-            //             (0, HashMap.HashMap<MPublic.GamePrincipal, Nat>(
-            //                 0, Principal.equal, Principal.hash,
-            //             ));
-            //         };
-            //         case (? a) { a; };
-            //     };
-            //     // 1. Add new score to scores.
-            //     let ms = metascore(gameId, accountId, s);
-            //     ss.put(gameId, s);
-            //     globalLeaderboard.put(accountId, (
-            //         g + ms, // 2. Add score to global total.
-            //         ss,
-            //     ));
-            // };
+            for ((accountId, s) in scores.vals()) {
+                let (g, ss) : GlobalScores = switch (globalLeaderboard.get(accountId)) {
+                    case (null) {
+                        (0, HashMap.HashMap<MPublic.GamePrincipal, Nat>(
+                            0, Principal.equal, Principal.hash,
+                        ));
+                    };
+                    case (? a) { a; };
+                };
+                // 1. Add new score to scores.
+                let ms = metascore(gameId, accountId, s);
+                ss.put(gameId, s);
+                globalLeaderboard.put(accountId, (
+                    g + ms, // 2. Add score to global total.
+                    ss,
+                ));
+            };
         };
 
         // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
@@ -193,20 +193,19 @@ module {
             };
             // The top score has changed, so all scores change...
             // [🗑] Recalculating everything...
-            // NOTE: heap error isolated here
-            // if (update) recalculate(gameId);
+
+            // BUG: heap error isolated here
+            if (update) _recalculate(gameId);
         };
 
         public func updateScore(gameId : MPublic.GamePrincipal, score : MAccount.Score) {
             // Log score update requsts.
             scoreUpdateLog.push((gameId, score));
-            // if (_updateScore(gameId, score)) recalculate(gameId);
+            if (_updateScore(gameId, score)) _recalculate(gameId);
         };
 
-        public func recalculate(gameId : MPublic.GamePrincipal, batch : Nat) {
-            // NOTE: Causes heap errors at ~3,000 scores
-            let range = ((batch - 1 : Nat) * 1000, batch * 1000);
-            Debug.print("Batch " # Nat.toText(range.0) # ", " # Nat.toText(range.1));
+        private func _recalculate(gameId : MPublic.GamePrincipal) {
+            // BUG: Causes heap errors at ~3,000 scores
             switch (gameLeaderboards.get(gameId)) {
                 case (null) {
                     // [💀] Unreachable: should not happen.
@@ -214,10 +213,7 @@ module {
                     assert(false);
                 };
                 case (? accountScores) {
-                    var i = 0;
-                    label l for ((_, (accountId, score)) in accountScores.entries()) {
-                        i := i + 1;
-                        if (i < range.0 + 1 or i > range.1) continue l;
+                    for ((_, (accountId, score)) in accountScores.entries()) {
                         switch (globalLeaderboard.get(accountId)) {
                             case (null) {
                                 // Player has no global scores yet.

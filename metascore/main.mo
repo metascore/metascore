@@ -34,6 +34,13 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     // TODO: use "ic:{canister}"?
     private stable var users : ?Interface.AccountsInterface = null;
 
+    public shared({caller}) func setAccountsCanister(c : Principal) : async Principal {
+        assert(_isAdmin(caller));
+        let can : Interface.AccountsInterface = actor(Principal.toText(c));
+        users := ?can;
+        c;
+    };
+
     system func preupgrade() {
         games := State.toStable(state);
     };
@@ -143,13 +150,6 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
             };
         };
         state.gameLeaderboards.put((game, accountScores));
-    };
-
-    // Calculate overall scores for a game.
-    // @auth: admin
-    public shared({caller}) func calculateMetascores(game : MPublic.GamePrincipal, batch : Nat) : async () {
-        assert(_isAdmin(caller));
-        state.recalculate(game, batch);
     };
 
     // Register a new game. The metascore canister will check whether the given
