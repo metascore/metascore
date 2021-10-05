@@ -1,6 +1,7 @@
 on: 
   push:
     paths:
+      - 'accounts/**'
       - 'example/**'
       - 'metascore/**'
       - 'src/**'

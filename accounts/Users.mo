@@ -1,3 +1,4 @@
+import Array "mo:base/Array";
 import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
 import Iter "mo:base/Iter";
@@ -83,6 +84,19 @@ module {
                     return accounts.get(accountId);
                 };
             };
+        };
+
+        public func getAccountsById(from : Nat, to : Nat) : [MAccount.Account] {
+            var as : [MAccount.Account] = [];
+            for (i in Iter.range(from, to - 1)) {
+                switch (accounts.get(i)) {
+                    case (null)      {};
+                    case (? account) {
+                        as := Array.append<MAccount.Account>(as, [account]);
+                    };
+                };
+            };
+            as;
         };
 
         // Stores the given account.

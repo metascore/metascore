@@ -209,6 +209,16 @@ shared({caller = owner}) actor class Accounts() : async MAccount.PublicInterface
         };
     };
 
+    // Returns a range of accounts.
+    // @auth: admin
+    public shared({caller}) func getAccountsById(
+        from : Nat,
+        to   : Nat,
+    ) : async [MAccount.Account] {
+        assert(_isAdmin(caller));
+        users.getAccountsById(from, to);
+    };
+
     // Adds a new principal as an admin.
     // @auth: admin
     public shared({caller}) func addAdmin(p : Principal) : async () {
