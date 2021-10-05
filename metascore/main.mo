@@ -256,20 +256,17 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
 
     // Return the top n players. Can return less if the number of players is
     // less than n.
-    public query func getTop(n : Nat) : async [MAccount.Score] {
-        var top : [MAccount.Score] = [];
-        for ((p, (s, _)) in state.globalLeaderboard.entries()) {
-            top := Array.append<MAccount.Score>(top, [(p, s)]);
-        };
-        top;
+    public query func getTop(gameId : MPublic.GamePrincipal, n : Nat) : async [MAccount.Score] {
+        state.getTop(gameId, n);
     };
 
     // Returns the percentile of a player in a specific game.
     // Null gets return if the player has no score for that game.
     public query func getPercentile(
-        account : MAccount.AccountId,
+        gameId    : MPublic.GamePrincipal,
+        accountId : MAccount.AccountId,
     ) : async ?Float {
-        state.getPercentile(account);
+        state.getPercentile(gameId, accountId);
     };
 
     // Returns the ranking of a player in a specific game (1-index based).
@@ -279,22 +276,6 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         account : MAccount.AccountId,
     ) : async ?Nat {
         state.getRanking(game, account);
-    };
-
-    // Returns the metascore of a player in a specific game ([0-1T] points).
-    // 0 gets return if the player has no score for that game.
-    public query func getMetascore(
-        game   : MPublic.GamePrincipal,
-        account : MAccount.AccountId,
-    ) : async Nat {
-        state.getMetascore(game, account);
-    };
-
-    // Returns the cumulative metascore of a player.
-    public query func getOverallMetascore(
-        player  : MAccount.AccountId,
-    ) : async Nat {
-        state.getOverallMetascore(player);
     };
 
     // Returns the list of registered games.
@@ -311,22 +292,14 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         state.getGameScores(game, count, offset);
     };
 
-    // Returns a list of overall metascores.
-    public query func getMetascores(
-        count   : ?Nat,
-        offset  : ?Nat,
-    ) : async [MAccount.Score] {
-        state.getMetascores(count, offset);
-    };
-
-    // Returns the overall metascore for the given percentile.
-    public query func getPercentileMetascore(percentile : Float) : async Nat {
-        state.getPercentileMetascore(percentile);
-    };
-
     // Returns total number of players.
-    public query func getPlayerCount() : async Nat {
-        state.getPlayerCount();
+    public func getPlayerCount() : async Nat {
+        // IDK why, but this need to be 'shared'?
+        let usersCan = switch (users) {
+            case (null) throw Error.reject("no accounts canister found");
+            case (? can) { can; };
+        };
+        await usersCan.getAccountCount();
     };
     
     // Returns total number of scores.
@@ -350,11 +323,16 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
             text #= "<h3>Top 3</h3>";
             text #= "<dl>";
             for (i in Iter.range(0, 2)) {
-                switch (state.globalLeaderboard.getIndex(i)) {
+                switch (state.gameLeaderboards.get(gameId)) {
                     case (null) {};
-                    case (? (p, (s, _)))  {
-                        text #= "<dt>" # Nat.toText(p) # "</dt>";
-                        text #= "<dd>" # Nat.toText(s) # "</dd>";
+                    case (? accountScores) {
+                        switch (accountScores.getIndex(i)) {
+                            case (null) {};
+                            case (? (_, (p, s))) {
+                                text #= "<dt>" # Nat.toText(p) # "</dt>";
+                                text #= "<dd>" # Nat.toText(s) # "</dd>";
+                            };
+                        };
                     };
                 };
             };

@@ -40,6 +40,10 @@ module {
 
         public let links = EQueue.EvictingQueue<(Principal, Principal)>(100);
 
+        public func size() : Nat {
+            accounts.size();
+        };
+
         // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
         // | Load stable state, given on creation. ~ constructor               |
         // ◣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◢

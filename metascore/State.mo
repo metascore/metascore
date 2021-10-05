@@ -64,31 +64,7 @@ module {
 
     public class State(
         state         : [StableGame],
-    ) : Interface.StateInterface {        
-        // Tuple of a global scores and individual scores per game.
-        private type GlobalScores = (
-            // Global metascore (is the sum of the scores in second field).
-            Nat,
-            // A map of games to the players scores from that game.
-            HashMap.HashMap<MPublic.GamePrincipal, Nat>,
-        );
-
-        // Calculates the global score based on all the game scores of a player.
-        private func globalScore(accountId : MAccount.AccountId, m : HashMap.HashMap<MPublic.GamePrincipal, Nat>) : Nat {
-            var score = 0;
-            for ((gameId, s) in m.entries()) {
-                score += metascore(gameId, accountId, s);
-            };
-            score;
-        };
-
-        // [🗄] A map of players to their global scores.
-        public let globalLeaderboard : SMap.SortedValueMap<MAccount.AccountId, GlobalScores> = SMap.SortedValueMap(
-            0, Nat.equal, Hash.hash,
-            // Sort based on the global metascore.
-            O.Descending(func((a, _) : GlobalScores, (b, _) : GlobalScores) : Order.Order{ Nat.compare(a, b); }),
-        );
-        
+    ) : Interface.StateInterface {                
         // A map of players to their game scores.
         private type AccountScores = SMap.SortedValueMap<MAccount.AccountId, MAccount.Score>;
 
@@ -155,25 +131,6 @@ module {
                 accountScores.put(a, (a, s));
             };
             gameLeaderboards.put((gameId, accountScores));
-
-            // Global Leaderboard.
-            for ((accountId, s) in scores.vals()) {
-                let (g, ss) : GlobalScores = switch (globalLeaderboard.get(accountId)) {
-                    case (null) {
-                        (0, HashMap.HashMap<MPublic.GamePrincipal, Nat>(
-                            0, Principal.equal, Principal.hash,
-                        ));
-                    };
-                    case (? a) { a; };
-                };
-                // 1. Add new score to scores.
-                let ms = metascore(gameId, accountId, s);
-                ss.put(gameId, s);
-                globalLeaderboard.put(accountId, (
-                    g + ms, // 2. Add score to global total.
-                    ss,
-                ));
-            };
         };
 
         // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
@@ -182,68 +139,25 @@ module {
 
         public func updateScores(gameId : MPublic.GamePrincipal, scores : [MAccount.Score]) {
             // NOTE: "heap out of bounds" error on this method with 3,682 records
-            // Log score update requsts.
+            // Log score update requests.
             for (score in Iter.fromArray(scores)) {
                 scoreUpdateLog.push((gameId, score));
             };
 
-            var update = false;
             for (score in scores.vals()) {
-                if (_updateScore(gameId, score)) update := true;
+                _updateScore(gameId, score)
             };
-            // The top score has changed, so all scores change...
-            // [🗑] Recalculating everything...
-
-            // BUG: heap error isolated here
-            if (update) _recalculate(gameId);
         };
 
         public func updateScore(gameId : MPublic.GamePrincipal, score : MAccount.Score) {
             // Log score update requsts.
             scoreUpdateLog.push((gameId, score));
-            if (_updateScore(gameId, score)) _recalculate(gameId);
-        };
-
-        private func _recalculate(gameId : MPublic.GamePrincipal) {
-            // BUG: Causes heap errors at ~3,000 scores
-            switch (gameLeaderboards.get(gameId)) {
-                case (null) {
-                    // [💀] Unreachable: should not happen.
-                    // The game should be already be there...
-                    assert(false);
-                };
-                case (? accountScores) {
-                    for ((_, (accountId, score)) in accountScores.entries()) {
-                        switch (globalLeaderboard.get(accountId)) {
-                            case (null) {
-                                // Player has no global scores yet.
-                                let ss = HashMap.HashMap<MPublic.GamePrincipal, Nat>(
-                                    1, Principal.equal, Principal.hash,
-                                );
-                                let ms = metascore(gameId, accountId, score);
-                                ss.put(gameId, score);
-                                globalLeaderboard.put(accountId, (
-                                    ms,
-                                    ss,
-                                ));
-                            };
-                            case (? (g, ss)) {
-                                let ms = metascore(gameId, accountId, score);
-                                ss.put(gameId, score);
-                                globalLeaderboard.put(accountId, (
-                                    globalScore(accountId, ss),
-                                    ss,
-                                ));
-                            };
-                        };
-                    };
-                };
-            };
+            _updateScore(gameId, score);
         };
 
         // Stores an updated game score.
         // Returns whether the global scores need to be recalculated.
-        private func _updateScore(gameId : MPublic.GamePrincipal, (accountId, score) : MAccount.Score) : Bool {
+        private func _updateScore(gameId : MPublic.GamePrincipal, (accountId, score) : MAccount.Score) {
             let accountScores = switch (gameLeaderboards.get(gameId)) {
                 case (null) {
                     SMap.SortedValueMap<MAccount.AccountId, MAccount.Score>(
@@ -256,95 +170,16 @@ module {
             switch (accountScores.get(accountId)) {
                 case (? (_, os)) {
                     // Score is already the same, no need to update anything.
-                    if (score <= os) return false;
-                    // Old metascore.
-                    let oms = metascore(gameId, accountId, os);
-                    // Old index in ranking. Based on this index we need to do some additional calculations...
-                    let oi  = switch (globalLeaderboard.getIndexOf(accountId)) {
-                        case (null) {
-                            // [💀] Unreachable: should not happen.
-                            // If a player score is already registered, than it
-                            // should also have an entry in the global leaderboard.
-                            assert(false); 0;
-                        };
-                        case (? i) { i; };
-                    };
-                    // Old top score.
-                    let ots = switch (accountScores.getValue(0)) {
-                        case (null) {
-                            // [💀] Unreachable: should not happen.
-                            // If a player score is already registered, than it
-                            // should also have a top player.
-                            assert(false); 0;
-                        };
-                        case (? (_, s)) { s; };
-                    };
+                    if (score <= os) return; // TODO: add scoring types.
 
                     accountScores.put(accountId, (accountId, score));
                     gameLeaderboards.put(gameId, accountScores);
-
-                    // Recalculate part of the leaderboard, because of ranking changes.
-                    if (oi == 0 or ots < score) return true;
-
-                    // Nothing special... other scores are not influenced by this change.
-                    // Since the top score was not improved/changed.
-                    switch (globalLeaderboard.get(accountId)) {
-                        case (null) {
-                            // [💀] Unreachable: should not happen.
-                            // If a player score is already registered, than it
-                            // should also have an entry in the global leaderboard.
-                            assert(false);
-                        };
-                        case (? (g, ss)) {
-                            let ms = metascore(gameId, accountId, score);
-                            ss.put(gameId, score);
-                            globalLeaderboard.put(accountId, (
-                                // The new score should be bigger than the previous one, this is checked above.
-                                g + ms - oms,
-                                ss,
-                            ));
-                        };
-                    };
                 };
                 case (null) {
-                    // Old top score.
-                    let ots = switch (accountScores.getValue(0)) {
-                        case (null)     { 0; };
-                        case (? (_, s)) { s; };
-                    };
-
                     accountScores.put(accountId, (accountId, score));
                     gameLeaderboards.put(gameId, accountScores);
-
-                    // Recalculate part of the leaderboard, because of ranking changes.
-                    if (ots < score) return true;
-                    
-                    switch (globalLeaderboard.get(accountId)) {
-                        case (null) {
-                            // Player has no scores yet.
-                            let ss = HashMap.HashMap<MPublic.GamePrincipal, Nat>(
-                                1, Principal.equal, Principal.hash,
-                            );
-                            let ms = metascore(gameId, accountId, score);
-                            ss.put(gameId, score);
-                            globalLeaderboard.put(accountId, (
-                                ms,
-                                ss,
-                            ));
-                        };
-                        case (? (g, ss)) {
-                            // Add new score.
-                            let ms = metascore(gameId, accountId, score);
-                            ss.put(gameId, score);
-                            globalLeaderboard.put(accountId, (
-                                g + ms,
-                                ss,
-                            ));
-                        };
-                    };
                 };
             };
-            false;
         };
 
         // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
@@ -352,28 +187,6 @@ module {
         // ◣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◢
 
         public func removeGame(gameId : MPublic.GamePrincipal) {
-            switch (gameLeaderboards.get(gameId)) {
-                case (null) {
-                    // [💀] Unreachable: should not happen.
-                    // The game should be already be there...
-                    assert(false);
-                };
-                case (? accountScores) {
-                    for ((_, (accountId, score)) in accountScores.entries()) {
-                        switch (globalLeaderboard.get(accountId)) {
-                            case (null) {};
-                            case (? (g, ss)) {
-                                let ms = metascore(gameId, accountId, score);
-                                ss.delete(gameId);
-                                globalLeaderboard.put(accountId, (
-                                    globalScore(accountId, ss),
-                                    ss,
-                                ));
-                            };
-                        };
-                    };
-                };
-            };
             games.delete(gameId);
             gameLeaderboards.delete(gameId);
         };
@@ -401,75 +214,19 @@ module {
             Iter.toArray(games.entries());
         };
 
-        public func getMetascore(gameId : MPublic.GamePrincipal, accountId : MAccount.AccountId) : Nat {
+        public func getPercentile(gameId : MPublic.GamePrincipal, accountId : MAccount.AccountId) : ?Float {
             switch (gameLeaderboards.get(gameId)) {
-                case (null) { 0; }; // Game not found.
+                case (null) { null; }; // Game not found.
                 case (? accountScores) {
-                    switch (accountScores.get(accountId)) {
-                        case (null)     { 0; }; // Player not found.
-                        case (? (_, s)) {
-                            metascore(gameId, accountId, s);
+                    switch (accountScores.getIndexOf(accountId)) {
+                        case (null) { null; };
+                        case (? i)  {
+                            let n = Float.fromInt(accountScores.size());
+                            ?((n - Float.fromInt(i)) / n);
                         };
                     };
                 };
             };
-        };
-
-        public func getMetascores(count : ?Nat, offset : ?Nat) : [MAccount.Score] {
-            let c : Nat = Option.get<Nat>(count,  100);
-            let o : Nat = Option.get<Nat>(offset, 0  );
-            Array.tabulate<MAccount.Score>(
-                Nat.min(c, globalLeaderboard.size()),
-                func (i : Nat) : MAccount.Score {
-                    switch (globalLeaderboard.getIndex(i + o)) {
-                        case (null) { (0, 0); };
-                        case (? (accountId, (score, _))) {
-                            (accountId, score);
-                        };
-                    };
-                },
-            );
-        };
-
-        public func getOverallMetascore(accountId : MAccount.AccountId) : Nat {
-            switch (globalLeaderboard.get(accountId)) {
-                case (null)     { 0; };
-                case (? (s, _)) { s; };
-            };
-        };
-
-        public func getPercentile(accountId : MAccount.AccountId) : ?Float {
-            switch (globalLeaderboard.getIndexOf(accountId)) {
-                case (null) { null; };
-                case (? i)  {
-                    let n = Float.fromInt(globalLeaderboard.size());
-                    ?((n - Float.fromInt(i)) / n);
-                };
-            };
-        };
-
-        public func getPercentileMetascore(p : Float) : Nat {
-            let i = Int.abs(Float.toInt(Float.ceil(
-                Float.fromInt(globalLeaderboard.size()) * (1 - p),
-            )));
-            if (i >= globalLeaderboard.size()) {
-                // Occurs when you want to get a percentile lower than 1/n.
-                return 0;
-            };
-
-            switch (globalLeaderboard.getValue(i)) {
-                case (null) {
-                    // [💀] Unreachable: should not happen.
-                    // Since we used the global leaderboard size, times [0-1],
-                    // there should always be a result.
-                    assert(false); 0;
-                };
-                case (? (s, _)) { s; };
-            };
-        };
-
-        public func getPlayerCount() : Nat {
-            globalLeaderboard.size();
         };
 
         public func getRanking(gameId : MPublic.GamePrincipal, accountId : MAccount.AccountId) : ?Nat {
@@ -492,18 +249,23 @@ module {
             count;
         };
 
-        public func getTop(n : Nat) : [MAccount.Score] {
-            Array.tabulate<MAccount.Score>(
-                Nat.min(n, globalLeaderboard.size()),
-                func (i : Nat) : MAccount.Score {
-                    switch (globalLeaderboard.getIndex(i)) {
-                        case (null) { (0, 0); };
-                        case (? (accountId, (score, _))) {
-                            (accountId, score);
-                        };
-                    };
-                },
-            );
+        public func getTop(gameId : MPublic.GamePrincipal, n : Nat) : [MAccount.Score] {
+            switch (gameLeaderboards.get(gameId)) {
+                case (null) { []; }; // Game not found.
+                case (? accountScores) {
+                    Array.tabulate<MAccount.Score>(
+                        Nat.min(n, accountScores.size()),
+                        func (i : Nat) : MAccount.Score {
+                            switch (accountScores.getIndex(i)) {
+                                case (null) { (0, 0); };
+                                case (? (_, (accountId, score))) {
+                                    (accountId, score);
+                                };
+                            };
+                        },
+                    );
+                };
+            };
         };
     };
 };

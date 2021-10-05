@@ -89,7 +89,7 @@ shared({caller = owner}) actor class Accounts() : async MAccount.PublicInterface
         };
     };
     
-    public query({caller}) func getAccount(
+    public query func getAccount(
         accountId : MAccount.AccountId,
     ) : async Result.Result<MAccount.Account, ()> {
         switch (users.accounts.get(accountId)) {
@@ -98,7 +98,11 @@ shared({caller = owner}) actor class Accounts() : async MAccount.PublicInterface
         };
     };
 
-    public query({caller}) func getAccountDetails(
+    public query func getAccountCount() : async Nat {
+        users.size();
+    };
+
+    public query func getAccountDetails(
         accountId : MAccount.AccountId,
     ) : async Result.Result<MAccount.AccountDetails, ()> {
         switch (users.accounts.get(accountId)) {
@@ -107,7 +111,7 @@ shared({caller = owner}) actor class Accounts() : async MAccount.PublicInterface
         };
     };
 
-    public query({caller}) func getAccountsFromScores(
+    public query func getAccountsFromScores(
         scores : [MPublic.Score],
     ) : async [MAccount.Score] {
         let accounts = Array.init<(MAccount.AccountId, Nat)>(scores.size(), (0 , 0));
