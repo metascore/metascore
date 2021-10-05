@@ -13,5 +13,6 @@ jobs:
       - uses: aviate-labs/setup-dfx@v0.2.3
         with:
           dfx-version: 0.8.1
+          install-moc: true
           vessel-version: 0.6.2
       - run: ./test/test.sh
