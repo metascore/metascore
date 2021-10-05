@@ -23,21 +23,21 @@ check() {
 bold "| Starting replica."
 dfx start --background --clean > /dev/null 2>&1
 dfx deploy --no-wallet metascore
-metascoreID=$(dfx canister id metascore)
+metascoreId=$(dfx canister id metascore)
 dfx deploy --no-wallet accounts
-accounts=$(dfx canister id accounts)
-dfx canister --no-wallet call metascore setAccountsCanister "(principal \"${accounts}\")"
+accountsId=$(dfx canister id accounts)
+dfx canister --no-wallet call metascore setAccountsCanister "(principal \"${accountsId}\")"
 dfx deploy --no-wallet game
-gameID=$(dfx canister id game)
+gameId=$(dfx canister id game)
 
-ownerID=$(dfx identity get-principal)
+ownerId=$(dfx identity get-principal)
 player1="variant{plug = principal \"ztlax-3lufm-ahpvx-36scg-7b4lf-m34dn-md7or-ltgjf-nhq4k-qqffn-oqe\"}"
 player2="variant{stoic = principal \"k4ltb-urk4m-kdfc4-a2sib-br5ub-gcnep-tkxt2-2oqqa-ldzj2-zvmyw-gqe\"}"
 
 bold "\n> TESTS\n"
 
 check "Check if owner is admin" \
-      "$(dfx canister call metascore isAdmin "(principal \"$ownerID\")")" \
+      "$(dfx canister call metascore isAdmin "(principal \"$ownerId\")")" \
       "(true)"
 
 check "Register invalid game" "$(dfx canister call metascore register "(principal \"lgncu-2qaaa-aaaah-qadfa-cai\")")" "(
@@ -46,12 +46,12 @@ check "Register invalid game" "$(dfx canister call metascore register "(principa
   },
 )"
 
-check "Register game" "$(dfx canister call game register "(principal \"$metascoreID\")")" "(variant { ok })"
+check "Register game" "$(dfx canister call game register "(principal \"$metascoreId\")")" "(variant { ok })"
 
 check "Get games" "$(dfx canister call metascore getGames)" "(
   vec {
     record {
-      principal \"ryjl3-tyaaa-aaaaa-aaaba-cai\";
+      principal \"$gameId\";
       record {
         name = \"Saga Tarot\";
         playUrl = \"https://l2jyf-nqaaa-aaaah-qadha-cai.raw.ic0.app/\";
@@ -61,40 +61,31 @@ check "Get games" "$(dfx canister call metascore getGames)" "(
   },
 )"
 
-check "Get game scores" "$(dfx canister call metascore getGameScores "(principal \"$gameID\", opt 100, opt 0)")" "(vec { record { 1 : nat; 10 : nat }; record { 0 : nat; 8 : nat } })"
+check "Get game scores" "$(dfx canister call metascore getGameScores "(principal \"$gameId\", opt 100, opt 0)")" "(vec { record { 1 : nat; 10 : nat }; record { 0 : nat; 8 : nat } })"
 
 echo ""
 
-check "Get Player1 percentile" "$(dfx canister call metascore getPercentile "(1)")" "(opt (1 : float64))"
-check "Get Player1 ranking"    "$(dfx canister call metascore getRanking "(principal \"$gameID\", 1)")"    "(opt (1 : nat))"
-check "Get Player1 metascore"  "$(dfx canister call metascore getOverallMetascore "(1)")"                  "(1_000_000_000_000 : nat)"
+check "Get Player1 percentile" "$(dfx canister call metascore getPercentile "(principal \"$gameId\", 1)")" "(opt (1 : float64))"
+check "Get Player1 ranking"    "$(dfx canister call metascore getRanking "(principal \"$gameId\", 1)")"    "(opt (1 : nat))"
 
 echo ""
 
-check "Get Player2 percentile" "$(dfx canister call metascore getPercentile "(0)")" "(opt (0.5 : float64))"
-check "Get Player2 ranking"    "$(dfx canister call metascore getRanking "(principal \"$gameID\", 0)")"    "(opt (2 : nat))"
-check "Get Player2 metascore"  "$(dfx canister call metascore getOverallMetascore "(0)")"                  "(650_000_000_000 : nat)"
+check "Get Player2 percentile" "$(dfx canister call metascore getPercentile "(principal \"$gameId\", 0)")" "(opt (0.5 : float64))"
+check "Get Player2 ranking"    "$(dfx canister call metascore getRanking "(principal \"$gameId\", 0)")"    "(opt (2 : nat))"
 
 echo ""
 
 check "Updates scores" "$(dfx canister call game sendNewScores "(vec { record { $player2; 15 } })")" "()"
-check "Get Player1 metascore" "$(dfx canister call metascore getOverallMetascore "(1)")"      "(583_333_333_333 : nat)"
-check "Get Player2 metascore" "$(dfx canister call metascore getOverallMetascore "(0)")"      "(1_000_000_000_000 : nat)"
 
 echo ""
 
-check "Get top 10" "$(dfx canister call metascore getTop "(10)")" "(
-  vec {
-    record { 0 : nat; 1_000_000_000_000 : nat };
-    record { 1 : nat; 583_333_333_333 : nat };
-  },
-)"
+check "Get top 10" "$(dfx canister call metascore getTop "(principal \"$gameId\", 10)")" "(vec { record { 0 : nat; 15 : nat }; record { 1 : nat; 10 : nat } })"
 
 echo ""
 
-check "Unregister game" "$(dfx canister call metascore unregister "(principal \"$gameID\")")" "()"
+check "Unregister game" "$(dfx canister call metascore unregister "(principal \"$gameId\")")" "()"
 
-check "Get top 10" "$(dfx canister call metascore getTop "(10)")" "(vec { record { 0 : nat; 0 : nat }; record { 1 : nat; 0 : nat } })"
+check "Get top 10" "$(dfx canister call metascore getTop "(principal \"$gameId\", 10)")" "(vec {})"
 
 bold "\n> TESTS ${GREEN}PASSED${NC}\n"
 

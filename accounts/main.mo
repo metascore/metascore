@@ -111,14 +111,17 @@ shared({caller = owner}) actor class Accounts() : async MAccount.PublicInterface
         };
     };
 
-    public query func getAccountsFromScores(
+    public shared func getAccountsFromScores(
         scores : [MPublic.Score],
     ) : async [MAccount.Score] {
         let accounts = Array.init<(MAccount.AccountId, Nat)>(scores.size(), (0 , 0));
         for (i in scores.keys()) {
             let (playerId, score) = scores[i];
             switch (users.getAccountByPrincipal(MPlayer.unpack(playerId))) {
-                case (null)      {};
+                case (null) {
+                    let (account, _) = users.ensureAccount(playerId);
+                    accounts[i] := (account.id, score);
+                };
                 case (? account) {
                     accounts[i] := (account.id, score);
                 };

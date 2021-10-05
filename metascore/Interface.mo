@@ -49,7 +49,7 @@ module {
         getAccount            : query  (MAccount.AccountId)             -> async Result.Result<MAccount.Account, ()>;
         getAccountCount       : query  ()                               -> async Nat;
         getAccountDetails     : query  (MAccount.AccountId)             -> async Result.Result<MAccount.AccountDetails, ()>;
-        getAccountsFromScores : query  ([MPublic.Score])                -> async [MAccount.Score];
+        getAccountsFromScores : shared ([MPublic.Score])                -> async [MAccount.Score];
         updateAccount         : shared (MAccount.UpdateRequest)         -> async MAccount.UpdateResponse;
         authenticateAccount   : shared (MAccount.AuthenticationRequest) -> async MAccount.AuthenticationResponse;
     };
