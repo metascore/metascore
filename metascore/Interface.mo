@@ -22,6 +22,7 @@ module {
         getGames               : query  ()                                          -> async [(MPublic.GamePrincipal, MPublic.Metadata)];
         getTop                 : query  (MPublic.GamePrincipal, n : Nat)            -> async [MAccount.Score];
         getGameScores          : query  (MPublic.GamePrincipal, ?Nat, ?Nat)         -> async [MAccount.Score];
+        getDetailedGameScores  : shared (MPublic.GamePrincipal, ?Nat, ?Nat)         -> async [MAccount.DetailedScore];
         getPlayerCount         : shared ()                                          -> async Nat;
         getScoreCount          : query  ()                                          -> async Nat;
 
@@ -46,11 +47,12 @@ module {
     };
 
     public type AccountsInterface = actor {
-        getAccount            : query  (MAccount.AccountId)             -> async Result.Result<MAccount.Account, ()>;
-        getAccountCount       : query  ()                               -> async Nat;
-        getAccountDetails     : query  (MAccount.AccountId)             -> async Result.Result<MAccount.AccountDetails, ()>;
-        getAccountsFromScores : shared ([MPublic.Score])                -> async [MAccount.Score];
-        updateAccount         : shared (MAccount.UpdateRequest)         -> async MAccount.UpdateResponse;
-        authenticateAccount   : shared (MAccount.AuthenticationRequest) -> async MAccount.AuthenticationResponse;
+        getAccount                  : query  (MAccount.AccountId)             -> async Result.Result<MAccount.Account, ()>;
+        getAccountCount             : query  ()                               -> async Nat;
+        getAccountDetails           : query  (MAccount.AccountId)             -> async Result.Result<MAccount.AccountDetails, ()>;
+        getAccountDetailsFromScores : shared ([MAccount.Score])               -> async [MAccount.DetailedScore];
+        getAccountsFromScores       : shared ([MPublic.Score])                -> async [MAccount.Score];
+        updateAccount               : shared (MAccount.UpdateRequest)         -> async MAccount.UpdateResponse;
+        authenticateAccount         : shared (MAccount.AuthenticationRequest) -> async MAccount.AuthenticationResponse;
     };
 };

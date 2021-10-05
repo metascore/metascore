@@ -111,6 +111,37 @@ shared({caller = owner}) actor class Accounts() : async MAccount.PublicInterface
         };
     };
 
+    public query func getAccountDetailsFromScores(
+        scores : [MAccount.Score],
+    ) : async [MAccount.DetailedScore] {
+        var accounts : [MAccount.DetailedScore] = [];
+        for ((accountId, score) in scores.vals()) {
+            switch (users.accounts.get(accountId)) {
+                case (null) {
+                    accounts := Array.append<MAccount.DetailedScore>(
+                        accounts,
+                        [(
+                            {
+                                alias      = null;
+                                avatar     = null;
+                                flavorText = null;
+                                id         = accountId;
+                            }, 
+                            score,
+                        )],
+                    );
+                };
+                case (? details) {
+                    accounts := Array.append<MAccount.DetailedScore>(
+                        accounts, 
+                        [(details, score)],
+                    );
+                };
+            };
+        };
+        accounts;
+    };
+
     public shared func getAccountsFromScores(
         scores : [MPublic.Score],
     ) : async [MAccount.Score] {

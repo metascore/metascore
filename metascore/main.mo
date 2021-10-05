@@ -283,6 +283,20 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         state.getGames();
     };
 
+    // Returns a list of detailed scores for a game.
+    public func getDetailedGameScores(
+        game    : MPublic.GamePrincipal,
+        count   : ?Nat,
+        offset  : ?Nat,
+    ) : async [MAccount.DetailedScore] {
+        let usersCan = switch (users) {
+            case (null) throw Error.reject("no accounts canister found");
+            case (? can) { can; };
+        };
+        let scores = state.getGameScores(game, count, offset);
+        await usersCan.getAccountDetailsFromScores(scores);
+    };
+
     // Returns a list of scores for a game.
     public query func getGameScores(
         game    : MPublic.GamePrincipal,
@@ -294,7 +308,6 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
 
     // Returns total number of players.
     public func getPlayerCount() : async Nat {
-        // IDK why, but this need to be 'shared'?
         let usersCan = switch (users) {
             case (null) throw Error.reject("no accounts canister found");
             case (? can) { can; };
