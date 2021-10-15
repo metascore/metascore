@@ -117,7 +117,7 @@ module {
 
         // Converts game scores to metascores.
         // | gameScore: a non-normalized score coming from a game.
-        private func metascore(gameId : MPublic.GamePrincipal, accountId : MAccount.AccountId, gameScore : Nat) : Nat {
+        public func metascore(gameId : MPublic.GamePrincipal, accountId : MAccount.AccountId, gameScore : Nat) : Nat {
             switch (gameLeaderboards.get(gameId)) {
                 case (null) { return 0; };
                 case (? accountScores) {

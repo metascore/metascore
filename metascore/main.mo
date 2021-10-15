@@ -178,6 +178,21 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         state.gameLeaderboards.put((game, accountScores));
     };
 
+    // Load metascores from a backup.
+    // @auth: admin
+    public shared ({ caller }) func loadMetascores(scores : [MAccount.Score]) : async () {
+        assert(_isAdmin(caller));
+        let ss = HashMap.HashMap<MPublic.GamePrincipal, Nat>(
+            1, Principal.equal, Principal.hash,
+        );
+        for ((accountId, score) in Iter.fromArray(scores)) {
+            state.globalLeaderboard.put(accountId, (
+                score,
+                ss,
+            ));
+        };
+    };
+
     // Calculate overall scores for a game.
     // @auth: admin
     public shared ({ caller }) func calculateMetascores(game : MPublic.GamePrincipal, batch : Nat) : async () {
