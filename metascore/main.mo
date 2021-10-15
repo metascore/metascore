@@ -1,5 +1,5 @@
 import Array "mo:base/Array";
-import AssetStorage "mo:http/AssetStorage";
+import AssetStorage "mo:asset-storage/AssetStorage";
 import Blob "mo:base/Blob";
 import Float "mo:base/Float";
 import Error "mo:base/Error";
@@ -18,7 +18,6 @@ import Text "mo:base/Text";
 
 import Interface "Interface";
 import State "State";
-import Users "Users";
 
 import MAccount "../src/Account";
 import MPublic "../src/Metascore";
@@ -28,22 +27,26 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     // Time since last cron call.
     private stable var lastCron : Int = Time.now();
 
-    // The state: games and user accounts.
-    private stable var nextAccountId = 0;
-    private stable var accounts : [Users.StableAccount] = [];
+    // The state: games.
     private stable var games : [State.StableGame] = [];
-    private let state = State.State(nextAccountId, accounts, games);
+    private let state = State.State(games);
+
+    // TODO: use "ic:{canister}"?
+    private stable var users : ?Interface.AccountsInterface = null;
+
+    public shared({caller}) func setAccountsCanister(c : Principal) : async Principal {
+        assert(_isAdmin(caller));
+        let can : Interface.AccountsInterface = actor(Principal.toText(c));
+        users := ?can;
+        c;
+    };
 
     system func preupgrade() {
-        games    := State.toStable(state);
-        nextAccountId := state.users.nextAccountId;
-        accounts := Users.toStable(state.users);
+        games := State.toStable(state);
     };
 
     system func postupgrade() {
-        games         := [];
-        nextAccountId := 0;
-        accounts      := [];
+        games := [];
     };
 
     // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
@@ -90,39 +93,9 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         return false;
     };
 
-    // Query full account.
-    // @auth: admin
-    public shared query ({ caller }) func getAccount(id : MAccount.AccountId) : async Result.Result<MAccount.Account, ()> {
-        assert(_isAdmin(caller));
-        switch (state.users.accounts.get(id)) {
-            case (null) { #err(); };
-            case (? a)  { #ok(a); };
-        };
-    };
-
-    // Query all full accounts.
-    // @auth: admin
-    public shared query ({ caller }) func getAccounts() : async [MAccount.Account] {
-        assert(_isAdmin(caller));
-        var accounts : [MAccount.Account] = [];
-        for (account in state.users.accounts.entries()) {
-            accounts := Array.append<MAccount.Account>(accounts, [account.1]);
-        };
-        return accounts;
-    };
-
-    // Load accounts from a backup.
-    // @auth: admin
-    public shared ({ caller }) func loadAccounts(backup : [MAccount.Account]) : async () {
-        assert(_isAdmin(caller));
-        for (account in Iter.fromArray(backup)) {
-            state.users.putAccount(account);
-        }
-    };
-
     // Load games from a backup.
     // @auth: admin
-    public shared ({ caller }) func loadGames(backup : [(MPublic.GamePrincipal, MPublic.Metadata)]) : async () {
+    public shared({caller}) func loadGames(backup : [(MPublic.GamePrincipal, MPublic.Metadata)]) : async () {
         assert(_isAdmin(caller));
         for ((gameId, metadata) in Iter.fromArray(backup)) {
             state.games.put(gameId, metadata);
@@ -131,7 +104,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
 
     // Load game scores from a backup.
     // @auth: admin
-    public shared ({ caller }) func loadGameScores(game : MPublic.GamePrincipal, scores : [MPublic.Score]) : async () {
+    public shared({caller}) func loadGameScores(game : MPublic.GamePrincipal, scores : [MPublic.Score]) : async () {
         assert(_isAdmin(caller));
         let accountScores = switch (state.gameLeaderboards.get(game)) {
             case (null) {
@@ -142,7 +115,8 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
             };
             case (? ps) { ps; };
         };
-        for ((a, s) in mapScoresToAccounts(scores).vals()) {
+        let mappedScores = await mapScoresToAccounts(scores);
+        for ((a, s) in mappedScores.vals()) {
             switch (accountScores.get(a)) {
                 case (? (_, os)) {
                     // Score is already the same, no need to update anything.
@@ -156,7 +130,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
 
     // Load game scores from a backup.
     // @auth: admin
-    public shared ({ caller }) func loadAccountScores(game : MPublic.GamePrincipal, scores : [MAccount.Score]) : async () {
+    public shared({caller}) func loadAccountScores(game : MPublic.GamePrincipal, scores : [MAccount.Score]) : async () {
         assert(_isAdmin(caller));
         let accountScores = switch (state.gameLeaderboards.get(game)) {
             case (null) {
@@ -176,13 +150,6 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
             };
         };
         state.gameLeaderboards.put((game, accountScores));
-    };
-
-    // Calculate overall scores for a game.
-    // @auth: admin
-    public shared ({ caller }) func calculateMetascores(game : MPublic.GamePrincipal, batch : Nat) : async () {
-        assert(_isAdmin(caller));
-        state.recalculate(game, batch);
     };
 
     // Register a new game. The metascore canister will check whether the given
@@ -216,17 +183,15 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
 
     private func getScores(gameId : MPublic.GamePrincipal) : async [MAccount.Score] {
         let game : MPublic.GameInterface = actor(Principal.toText(gameId));
-        mapScoresToAccounts(await game.metascoreScores());
+        await mapScoresToAccounts(await game.metascoreScores());
     };
 
-    private func mapScoresToAccounts(scores : [MPublic.Score]) : [MAccount.Score] {
-        Array.map<MPublic.Score, MAccount.Score>(
-            scores,
-            func ((player, score) : MPublic.Score) : MAccount.Score {
-                let (account, _) = state.users.ensureAccount(player);
-                (account.id, score);
-            },
-        );
+    private func mapScoresToAccounts(scores : [MPublic.Score]) : async [MAccount.Score] {
+        let usersCan = switch (users) {
+            case (null) throw Error.reject("no accounts canister found");
+            case (? can) { can; };
+        };
+        await usersCan.getAccountsFromScores(scores);
     };
 
     // Allows owners and games to unregister games/themselves.
@@ -242,14 +207,15 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     // leaderboard will occasionally get queried on the metascoreScores endpoint.
     public shared({caller}) func scoreUpdate(
         scores : [MPublic.Score],
-    ) : async() {
+    ) : async () {
         switch (state.games.get(caller)) {
             case (null) {
                 // Means that the caller was not the game canister itself.
                 assert(false);
             };
             case (? _)  {
-                state.updateScores(caller, mapScoresToAccounts(scores));
+                let mappedScores = await mapScoresToAccounts(scores);
+                state.updateScores(caller, mappedScores);
             };
         };
     };
@@ -269,7 +235,7 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     };
 
     // Pull scores for one game.
-    public shared ({ caller }) func queryGameScores(gameId : MPublic.GamePrincipal) : async () {
+    public shared ({caller}) func queryGameScores(gameId : MPublic.GamePrincipal) : async () {
         assert(_isAdmin(caller));
         let scores = await getScores(gameId);
         state.updateScores(gameId, scores);
@@ -285,137 +251,22 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
     };
 
     // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
-    // | User Account Management                                               |
-    // ◣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◢
-
-    public query func getAccountDetails(id : MAccount.AccountId) : async Result.Result<MAccount.AccountDetails, ()> {
-        switch (state.users.accounts.get(id)) {
-            case (null) { #err(); };
-            case (? a)  { #ok(MAccount.getDetails(a)); };
-        };
-    };
-
-    public shared({caller}) func updateAccount(
-        req : MAccount.UpdateRequest,
-    ) : async MAccount.UpdateResponse {
-        switch (state.users.getAccountByPrincipal(caller)) {
-            case (null)      {
-                #err("account not found: " # Principal.toText(caller));
-            };
-            case (? account) {
-                let updatedAccount : MAccount.Account = {
-                    alias         = req.alias;
-                    avatar        = req.avatar;
-                    flavorText    = req.flavorText;
-                    id            = account.id;
-                    plugAddress   = account.plugAddress;
-                    primaryWallet = switch (req.primaryWallet) {
-                        case (null) { account.primaryWallet; };
-                        case (? newWallet) { newWallet; };
-                    };
-                    stoicAddress  = account.stoicAddress;
-                };
-                state.users.putAccount(updatedAccount);
-                #ok(updatedAccount);
-            };
-        };
-    };
-
-    public shared({caller}) func authenticateAccount(
-        req : MAccount.AuthenticationRequest,
-    ) : async MAccount.AuthenticationResponse {
-        switch (req) {
-            case (#authenticate(playerId)) {
-                let principal = MPlayer.unpack(playerId);
-                if (not Principal.equal(principal, caller)) return #forbidden;
-                let (account, new) = state.users.ensureAccount(playerId);
-                #ok({
-                    message = switch (new) {
-                        case (true)  "created new account";
-                        case (false) "retrieved account";
-                    };
-                    account;
-                });
-            };
-            case (#link(playerA, playerB)) {
-                let principalA = MPlayer.unpack(playerA);
-                let principalB = MPlayer.unpack(playerB);
-                if (Principal.equal(principalA, principalB)) return #err({
-                    message = "principals can not be the same";
-                });
-
-                let (player, newPlayer) = if (Principal.equal(caller, principalA)) {
-                    (playerA, playerB);
-                } else {
-                    if (Principal.equal(caller, principalB)) {
-                        (playerB, playerA);
-                    } else {
-                        // Caller is not authorized to link two `other` principals,
-                        // one of the two need to be the same as the caller.
-                        return #forbidden;
-                    };
-                };
-
-                // Check whether the two players can be linked.
-                let account = switch (state.users.canBeLinked(player, newPlayer)) {
-                    case (#err(msg))    { return #err({ message=msg; })};
-                    case (#ok(account)) { account; };
-                };
-
-
-                let newPrincipal = MPlayer.unpack(newPlayer);
-                switch (state.users.getLink(caller)) {
-                    case (null) {
-                        // Initial request, create link.
-                        state.users.links.push((newPrincipal, caller));
-                        #pendingConfirmation({
-                            message = "awaiting confirmation from: " # Principal.toText(newPrincipal);
-                        });
-                    };
-                    case (? link) {
-                        if (not Principal.equal(link, newPrincipal)) {
-                            // Pending link was not the new player.
-                            state.users.deleteLink(caller); // Do we still need this?
-                            state.users.links.push((newPrincipal, caller));
-                            return #pendingConfirmation({
-                                message = "awaiting confirmation from: " # Principal.toText(newPrincipal);
-                            });
-                        };
-
-                        // We already get an (new) account from `canBeLinked`.
-                        state.users.deleteLink(caller);
-                        state.users.deleteLink(newPrincipal);
-                        let newAccount = state.users.link(account, newPlayer);
-                        #ok({
-                            message = "linked principals to account";
-                            account = newAccount;
-                        });
-                    };
-                };
-            };
-        };
-    };
-
-    // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
     // | Public Interface                                                      |
     // ◣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◢
 
     // Return the top n players. Can return less if the number of players is
     // less than n.
-    public query func getTop(n : Nat) : async [MAccount.Score] {
-        var top : [MAccount.Score] = [];
-        for ((p, (s, _)) in state.globalLeaderboard.entries()) {
-            top := Array.append<MAccount.Score>(top, [(p, s)]);
-        };
-        top;
+    public query func getTop(gameId : MPublic.GamePrincipal, n : Nat) : async [MAccount.Score] {
+        state.getTop(gameId, n);
     };
 
     // Returns the percentile of a player in a specific game.
     // Null gets return if the player has no score for that game.
     public query func getPercentile(
-        account : MAccount.AccountId,
+        gameId    : MPublic.GamePrincipal,
+        accountId : MAccount.AccountId,
     ) : async ?Float {
-        state.getPercentile(account);
+        state.getPercentile(gameId, accountId);
     };
 
     // Returns the ranking of a player in a specific game (1-index based).
@@ -427,25 +278,23 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         state.getRanking(game, account);
     };
 
-    // Returns the metascore of a player in a specific game ([0-1T] points).
-    // 0 gets return if the player has no score for that game.
-    public query func getMetascore(
-        game   : MPublic.GamePrincipal,
-        account : MAccount.AccountId,
-    ) : async Nat {
-        state.getMetascore(game, account);
-    };
-
-    // Returns the cumulative metascore of a player.
-    public query func getOverallMetascore(
-        player  : MAccount.AccountId,
-    ) : async Nat {
-        state.getOverallMetascore(player);
-    };
-
     // Returns the list of registered games.
     public query func getGames() : async [(MPublic.GamePrincipal, MPublic.Metadata)] {
         state.getGames();
+    };
+
+    // Returns a list of detailed scores for a game.
+    public func getDetailedGameScores(
+        game    : MPublic.GamePrincipal,
+        count   : ?Nat,
+        offset  : ?Nat,
+    ) : async [MAccount.DetailedScore] {
+        let usersCan = switch (users) {
+            case (null) throw Error.reject("no accounts canister found");
+            case (? can) { can; };
+        };
+        let scores = state.getGameScores(game, count, offset);
+        await usersCan.getAccountDetailsFromScores(scores);
     };
 
     // Returns a list of scores for a game.
@@ -457,39 +306,13 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
         state.getGameScores(game, count, offset);
     };
 
-    // Returns a detailed list of scores for a game.
-    public query func getDetailedGameScores(
-        game    : MPublic.GamePrincipal,
-        count   : ?Nat,
-        offset  : ?Nat,
-    ) : async [MAccount.DetailedScore] {
-        state.getDetailedGameScores(game, count, offset);
-    };
-
-    // Returns a list of overall metascores.
-    public query func getMetascores(
-        count   : ?Nat,
-        offset  : ?Nat,
-    ) : async [MAccount.Score] {
-        state.getMetascores(count, offset);
-    };
-
-    // Returns a detailed list of overall metascores.
-    public query func getDetailedMetascores(
-        count   : ?Nat,
-        offset  : ?Nat,
-    ) : async [MAccount.DetailedScore] {
-        state.getDetailedMetascores(count, offset);
-    };
-
-    // Returns the overall metascore for the given percentile.
-    public query func getPercentileMetascore(percentile : Float) : async Nat {
-        state.getPercentileMetascore(percentile);
-    };
-
     // Returns total number of players.
-    public query func getPlayerCount() : async Nat {
-        state.getPlayerCount();
+    public func getPlayerCount() : async Nat {
+        let usersCan = switch (users) {
+            case (null) throw Error.reject("no accounts canister found");
+            case (? can) { can; };
+        };
+        await usersCan.getAccountCount();
     };
     
     // Returns total number of scores.
@@ -513,11 +336,16 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
             text #= "<h3>Top 3</h3>";
             text #= "<dl>";
             for (i in Iter.range(0, 2)) {
-                switch (state.globalLeaderboard.getIndex(i)) {
+                switch (state.gameLeaderboards.get(gameId)) {
                     case (null) {};
-                    case (? (p, (s, _)))  {
-                        text #= "<dt>" # Nat.toText(p) # "</dt>";
-                        text #= "<dd>" # Nat.toText(s) # "</dd>";
+                    case (? accountScores) {
+                        switch (accountScores.getIndex(i)) {
+                            case (null) {};
+                            case (? (_, (p, s))) {
+                                text #= "<dt>" # Nat.toText(p) # "</dt>";
+                                text #= "<dd>" # Nat.toText(s) # "</dd>";
+                            };
+                        };
                     };
                 };
             };

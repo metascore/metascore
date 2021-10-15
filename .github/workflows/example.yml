@@ -14,4 +14,4 @@ jobs:
         with:
           dfx-version: 0.8.1
           vessel-version: 0.6.2
-      - run: ./example.sh
+      - run: ./test/example.sh

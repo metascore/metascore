@@ -36,11 +36,13 @@ module {
     // Represents the public API of the Metascore canister to authenticate users.
     public type PublicInterface = actor {
         // Returns the account associated with the given identifier.
-        getAccount          : query  (AccountId)               -> async Result.Result<Account, ()>;
+        getAccount          : query  (AccountId)             -> async Result.Result<Account, ()>;
+        // Returns the details of the account with the given identifier.
+        getAccountDetails   : query  (AccountId)             -> async Result.Result<AccountDetails, ()>;
         // Updates an existing account.
-        updateAccount       : shared (UpdateRequest)           -> async UpdateResponse;
+        updateAccount       : shared (UpdateRequest)         -> async UpdateResponse;
         // Authentication of an account.
-        authenticateAccount : shared (AuthenticationRequest)   -> async AuthenticationResponse;
+        authenticateAccount : shared (AuthenticationRequest) -> async AuthenticationResponse;
     };
 
     // Account authentication request.
