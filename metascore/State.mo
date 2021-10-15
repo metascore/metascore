@@ -206,7 +206,8 @@ module {
         public func updateScore(gameId : MPublic.GamePrincipal, score : MAccount.Score) {
             // Log score update requsts.
             scoreUpdateLog.push((gameId, score));
-            // if (_updateScore(gameId, score)) recalculate(gameId);
+            let update = _updateScore(gameId, score)
+            // if (update) recalculate(gameId);
         };
 
         public func recalculate(gameId : MPublic.GamePrincipal, batch : Nat) {
@@ -267,91 +268,95 @@ module {
                 case (? (_, os)) {
                     // Score is already the same, no need to update anything.
                     if (score <= os) return false;
-                    // Old metascore.
-                    let oms = metascore(gameId, accountId, os);
-                    // Old index in ranking. Based on this index we need to do some additional calculations...
-                    let oi  = switch (globalLeaderboard.getIndexOf(accountId)) {
-                        case (null) {
-                            // [💀] Unreachable: should not happen.
-                            // If a player score is already registered, than it
-                            // should also have an entry in the global leaderboard.
-                            assert(false); 0;
-                        };
-                        case (? i) { i; };
-                    };
-                    // Old top score.
-                    let ots = switch (accountScores.getValue(0)) {
-                        case (null) {
-                            // [💀] Unreachable: should not happen.
-                            // If a player score is already registered, than it
-                            // should also have a top player.
-                            assert(false); 0;
-                        };
-                        case (? (_, s)) { s; };
-                    };
 
                     accountScores.put(accountId, (accountId, score));
                     gameLeaderboards.put(gameId, accountScores);
 
-                    // Recalculate part of the leaderboard, because of ranking changes.
-                    if (oi == 0 or ots < score) return true;
+                    // NOTE: Disabling global leaderboard
+                    // // Old metascore.
+                    // let oms = metascore(gameId, accountId, os);
+                    // // Old index in ranking. Based on this index we need to do some additional calculations...
+                    // let oi  = switch (globalLeaderboard.getIndexOf(accountId)) {
+                    //     case (null) {
+                    //         // [💀] Unreachable: should not happen.
+                    //         // If a player score is already registered, than it
+                    //         // should also have an entry in the global leaderboard.
+                    //         assert(false); 0;
+                    //     };
+                    //     case (? i) { i; };
+                    // };
+                    // // Old top score.
+                    // let ots = switch (accountScores.getValue(0)) {
+                    //     case (null) {
+                    //         // [💀] Unreachable: should not happen.
+                    //         // If a player score is already registered, than it
+                    //         // should also have a top player.
+                    //         assert(false); 0;
+                    //     };
+                    //     case (? (_, s)) { s; };
+                    // };
+                    // // Recalculate part of the leaderboard, because of ranking changes.
+                    // if (oi == 0 or ots < score) return true;
 
-                    // Nothing special... other scores are not influenced by this change.
-                    // Since the top score was not improved/changed.
-                    switch (globalLeaderboard.get(accountId)) {
-                        case (null) {
-                            // [💀] Unreachable: should not happen.
-                            // If a player score is already registered, than it
-                            // should also have an entry in the global leaderboard.
-                            assert(false);
-                        };
-                        case (? (g, ss)) {
-                            let ms = metascore(gameId, accountId, score);
-                            ss.put(gameId, score);
-                            globalLeaderboard.put(accountId, (
-                                // The new score should be bigger than the previous one, this is checked above.
-                                g + ms - oms,
-                                ss,
-                            ));
-                        };
-                    };
+                    // // Nothing special... other scores are not influenced by this change.
+                    // // Since the top score was not improved/changed.
+                    // switch (globalLeaderboard.get(accountId)) {
+                    //     case (null) {
+                    //         // [💀] Unreachable: should not happen.
+                    //         // If a player score is already registered, than it
+                    //         // should also have an entry in the global leaderboard.
+                    //         assert(false);
+                    //     };
+                    //     case (? (g, ss)) {
+                    //         let ms = metascore(gameId, accountId, score);
+                    //         ss.put(gameId, score);
+                    //         globalLeaderboard.put(accountId, (
+                    //             // The new score should be bigger than the previous one, this is checked above.
+                    //             g + ms - oms,
+                    //             ss,
+                    //         ));
+                    //     };
+                    // };
                 };
                 case (null) {
-                    // Old top score.
-                    let ots = switch (accountScores.getValue(0)) {
-                        case (null)     { 0; };
-                        case (? (_, s)) { s; };
-                    };
 
                     accountScores.put(accountId, (accountId, score));
                     gameLeaderboards.put(gameId, accountScores);
 
-                    // Recalculate part of the leaderboard, because of ranking changes.
-                    if (ots < score) return true;
+                    // NOTE: Disabling global leaderboard
+
+                    // Old top score.
+                    // let ots = switch (accountScores.getValue(0)) {
+                    //     case (null)     { 0; };
+                    //     case (? (_, s)) { s; };
+                    // };
+
+                    // // Recalculate part of the leaderboard, because of ranking changes.
+                    // if (ots < score) return true;
                     
-                    switch (globalLeaderboard.get(accountId)) {
-                        case (null) {
-                            // Player has no scores yet.
-                            let ss = HashMap.HashMap<MPublic.GamePrincipal, Nat>(
-                                1, Principal.equal, Principal.hash,
-                            );
-                            let ms = metascore(gameId, accountId, score);
-                            ss.put(gameId, score);
-                            globalLeaderboard.put(accountId, (
-                                ms,
-                                ss,
-                            ));
-                        };
-                        case (? (g, ss)) {
-                            // Add new score.
-                            let ms = metascore(gameId, accountId, score);
-                            ss.put(gameId, score);
-                            globalLeaderboard.put(accountId, (
-                                g + ms,
-                                ss,
-                            ));
-                        };
-                    };
+                    // switch (globalLeaderboard.get(accountId)) {
+                    //     case (null) {
+                    //         // Player has no scores yet.
+                    //         let ss = HashMap.HashMap<MPublic.GamePrincipal, Nat>(
+                    //             1, Principal.equal, Principal.hash,
+                    //         );
+                    //         let ms = metascore(gameId, accountId, score);
+                    //         ss.put(gameId, score);
+                    //         globalLeaderboard.put(accountId, (
+                    //             ms,
+                    //             ss,
+                    //         ));
+                    //     };
+                    //     case (? (g, ss)) {
+                    //         // Add new score.
+                    //         let ms = metascore(gameId, accountId, score);
+                    //         ss.put(gameId, score);
+                    //         globalLeaderboard.put(accountId, (
+                    //             g + ms,
+                    //             ss,
+                    //         ));
+                    //     };
+                    // };
                 };
             };
             false;
@@ -362,30 +367,31 @@ module {
         // ◣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◢
 
         public func removeGame(gameId : MPublic.GamePrincipal) {
-            switch (gameLeaderboards.get(gameId)) {
-                case (null) {
-                    // [💀] Unreachable: should not happen.
-                    // The game should be already be there...
-                    assert(false);
-                };
-                case (? accountScores) {
-                    for ((_, (accountId, score)) in accountScores.entries()) {
-                        switch (globalLeaderboard.get(accountId)) {
-                            case (null) {};
-                            case (? (g, ss)) {
-                                let ms = metascore(gameId, accountId, score);
-                                ss.delete(gameId);
-                                globalLeaderboard.put(accountId, (
-                                    globalScore(accountId, ss),
-                                    ss,
-                                ));
-                            };
-                        };
-                    };
-                };
-            };
             games.delete(gameId);
             gameLeaderboards.delete(gameId);
+            // NOTE: Disabling global leaderboard
+            // switch (gameLeaderboards.get(gameId)) {
+            //     case (null) {
+            //         // [💀] Unreachable: should not happen.
+            //         // The game should be already be there...
+            //         assert(false);
+            //     };
+            //     case (? accountScores) {
+            //         for ((_, (accountId, score)) in accountScores.entries()) {
+            //             switch (globalLeaderboard.get(accountId)) {
+            //                 case (null) {};
+            //                 case (? (g, ss)) {
+            //                     let ms = metascore(gameId, accountId, score);
+            //                     ss.delete(gameId);
+            //                     globalLeaderboard.put(accountId, (
+            //                         globalScore(accountId, ss),
+            //                         ss,
+            //                     ));
+            //                 };
+            //             };
+            //         };
+            //     };
+            // };
         };
 
         public func getGameScores(gameId : MPublic.GamePrincipal, count : ?Nat, offset : ?Nat) : [MAccount.Score] {
