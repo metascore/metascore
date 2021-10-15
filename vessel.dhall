@@ -1,4 +1,4 @@
 {
-  dependencies = [ "base", "http", "sorted", "queue" ],
-  compiler = None Text
+  dependencies = [ "base", "asset-storage", "auth", "sorted", "queue" ],
+  compiler = Some "0.6.10"
 }

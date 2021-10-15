@@ -2,6 +2,10 @@
   "version": 1,
   "dfx": "0.8.1",
   "canisters": {
+    "accounts": {
+      "type": "motoko",
+      "main": "accounts/main.mo"
+    },
     "metascore": {
       "type": "motoko",
       "main": "metascore/main.mo"
