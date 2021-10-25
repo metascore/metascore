@@ -154,25 +154,25 @@ shared ({caller = owner}) actor class Metascore() : async Interface.FullInterfac
 
     // Load metascores from a backup.
     // @auth: admin
-    public shared ({ caller }) func loadMetascores(scores : [MAccount.Score]) : async () {
-        assert(_isAdmin(caller));
-        let ss = HashMap.HashMap<MPublic.GamePrincipal, Nat>(
-            1, Principal.equal, Principal.hash,
-        );
-        for ((accountId, score) in Iter.fromArray(scores)) {
-            state.globalLeaderboard.put(accountId, (
-                score,
-                ss,
-            ));
-        };
-    };
+    // public shared ({ caller }) func loadMetascores(scores : [MAccount.Score]) : async () {
+    //     assert(_isAdmin(caller));
+    //     let ss = HashMap.HashMap<MPublic.GamePrincipal, Nat>(
+    //         1, Principal.equal, Principal.hash,
+    //     );
+    //     for ((accountId, score) in Iter.fromArray(scores)) {
+    //         state.globalLeaderboard.put(accountId, (
+    //             score,
+    //             ss,
+    //         ));
+    //     };
+    // };
 
     // Calculate overall scores for a game.
     // @auth: admin
-    public shared ({ caller }) func calculateMetascores(game : MPublic.GamePrincipal, batch : Nat) : async () {
-        assert(_isAdmin(caller));
-        state.recalculate(game, batch);
-    };
+    // public shared ({ caller }) func calculateMetascores(game : MPublic.GamePrincipal, batch : Nat) : async () {
+    //     assert(_isAdmin(caller));
+    //     state.recalculate(game, batch);
+    // };
 
     // Register a new game. The metascore canister will check whether the given
     // principal ID (canister) implements the Metascore game interface. If so,

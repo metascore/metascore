@@ -1,18 +1,21 @@
 import { Actor, ActorConfig, HttpAgent, HttpAgentOptions } from "@dfinity/agent";
-import { idlFactory } from './generated';
+import { idlFactory as metascoreIdl } from './generated/metascore';
+import { idlFactory as accountsIdl } from './generated/accounts';
 import {
-    Metascore,
-} from './generated/metascore.did.js';
+    Accounts,
+} from './generated/accounts/accounts.did.d';
 import type {
+    Player,
     GamePrincipal,
     Metadata,
-    Player,
     Result,
     Score,
-} from './generated/metascore.did.d';
+    Metascore,
+} from './generated/metascore/metascore.did.d';
 
 const STAGING_PRINCIPAL = 'rl4ub-oqaaa-aaaah-qbi3a-cai';
 const PRODUCTION_PRINCIPAL = 'tzvxm-jqaaa-aaaaj-qabga-cai';
+const ACCOUNTS_PRINCIPAL = 'upsxs-oyaaa-aaaah-qcaua-cai';
 
 // Satisfy dfx generated code
 // ...and vite (because it statically replaces things? wtf???)
@@ -25,10 +28,6 @@ interface MetascoreQuery {
     getPercentile: Metascore['getGames'];
     // Returns the ranking of a player in the given game;
     getRanking: Metascore['getRanking'];
-    // Returns the Metascore of a player in the given game;
-    getMetascore: Metascore['getMetascore'];
-    // Returns the overall Metascore of a player.
-    getOverallMetascore: Metascore['getOverallMetascore'];
     // Returns a list of all games.
     getGames: Metascore['getGames'];
     // Returns scores for a game.
@@ -37,36 +36,19 @@ interface MetascoreQuery {
     getScoreCount: Metascore['getScoreCount'];
     // Returns total number of players.
     getPlayerCount: Metascore['getPlayerCount'];
-    // Returns metascore for given percentil.
-    getPercentileMetascore: Metascore['getPercentileMetascore'];
-    // Returns list of overall metascores.
-    getMetascores: Metascore['getMetascores'];
-    // Allows users to authenticate with accounts.
-    authenticateAccount: Metascore['authenticateAccount'];
-    // Returns an account by id.
-    getAccount: Metascore['getAccount'];
-    // Allow users to update their accounts.
-    updateAccount: Metascore['updateAccount'];
-    // Get profile info for an account
-    getAccountDetails: Metascore['getAccountDetails'];
     // Get game scores with account data
     getDetailedGameScores: Metascore['getDetailedGameScores'];
-    // Get metascores with account data
-    getDetailedMetascores: Metascore['getDetailedMetascores'];
 };
 
-const queryIdlFactory = ({ IDL } : any) => {
-    const base = idlFactory({ IDL });
-    return IDL.Service({
-        getGames: base.getGames,
-        getMetascore: base.getMetascore,
-        getOverallMetascore: base.getOverallMetascore,
-        getPercentile: base.getPercentile,
-        getRanking: base.getRanking,
-    });
+interface AccountsQuery {
+  authenticateAccount : Accounts['authenticateAccount'];
+  getAccount : Accounts['getAccount'];
+  getAccountCount : Accounts['getAccountCount'];
+  getAccountDetails : Accounts['getAccountDetails'];
+  updateAccount : Accounts['updateAccount'];
 };
 
-const createActor = (agent?: HttpAgent, canisterId = STAGING_PRINCIPAL) => {
+const createMetascoreActor = (agent?: HttpAgent, canisterId = STAGING_PRINCIPAL) => {
     const options : {
         agentOptions : HttpAgentOptions;
         actorOptions : ActorConfig;
@@ -77,17 +59,35 @@ const createActor = (agent?: HttpAgent, canisterId = STAGING_PRINCIPAL) => {
         },
     };
     agent = agent || new HttpAgent({ ...options?.agentOptions });
-    return Actor.createActor<MetascoreQuery>(idlFactory, {
+    return Actor.createActor<MetascoreQuery>(metascoreIdl, {
+        agent,
+        ...options?.actorOptions,
+    });
+};
+
+const createAccountsActor = (agent?: HttpAgent, canisterId = ACCOUNTS_PRINCIPAL) => {
+    const options : {
+        agentOptions : HttpAgentOptions;
+        actorOptions : ActorConfig;
+    } = {
+        agentOptions: {host: 'https://raw.ic0.app'},
+        actorOptions: {
+            canisterId
+        },
+    };
+    agent = agent || new HttpAgent({ ...options?.agentOptions });
+    return Actor.createActor<AccountsQuery>(accountsIdl, {
         agent,
         ...options?.actorOptions,
     });
 };
 
 export {
-    queryIdlFactory as idlFactory,
-    createActor,
+    createMetascoreActor,
+    createAccountsActor,
     STAGING_PRINCIPAL,
     PRODUCTION_PRINCIPAL,
+    ACCOUNTS_PRINCIPAL,
 
     GamePrincipal,
     Metadata,
@@ -95,4 +95,9 @@ export {
     Player,
     Result,
     Score,
+
+    AccountsQuery,
+
+    accountsIdl,
+    metascoreIdl,
 };

@@ -4,6 +4,7 @@ import HashMap "mo:base/HashMap";
 import Iter "mo:base/Iter";
 import List "mo:base/List";
 import Nat "mo:base/Nat";
+import Option "mo:base/Option";
 import Principal "mo:base/Principal";
 import Queue "mo:queue/Queue";
 import EQueue "mo:queue/EvictingQueue";
@@ -11,6 +12,8 @@ import Result "mo:base/Result";
 
 import MAccount "../src/Account";
 import MPlayer "../src/Player";
+
+import Debug "mo:base/Debug";
 
 module {
     public type StableAccount = (
@@ -171,9 +174,8 @@ module {
         ) : Result.Result<MAccount.Account, Text> {
             // Check whether the player has an account and that the other wallet is empty.
             // Also checks whether the two players have different wallet types.
-            switch (getAccountByPrincipal(MPlayer.unpack(player))) {
-                case (null) { return #err("account not found"); };
-                case (? account) {
+            switch (ensureAccount(player)) {
+                case (account, _) {
                     switch (player) {
                         case (#plug(_)) {
                             if (account.stoicAddress != null) {
@@ -209,18 +211,40 @@ module {
             account   : MAccount.Account,
             newPlayer : MPlayer.Player,
         ) : MAccount.Account {
-            // Delete other account of player, if exists.
+            var alias : ?Text = null;
+            var avatar : ?Text = null;
+            var flavorText : ?Text = null;
             switch (getAccountByPrincipal(MPlayer.unpack(newPlayer))) {
-                case (? account) { deleteAccount(account); };
-                case (null) {};
+                // Merge account fields via defined > undefined, stoic > plug
+                case (null) {
+                    alias := account.alias;
+                    avatar := account.avatar;
+                    flavorText := account.flavorText;
+                };
+                case (? oldAccount) {
+                    alias := switch (oldAccount.alias) {
+                        case null account.alias;
+                        case x x;
+                    };
+                    avatar := switch (oldAccount.avatar) {
+                        case null account.avatar;
+                        case x x;
+                    };
+                    flavorText := switch (oldAccount.flavorText) {
+                        case null account.flavorText;
+                        case x x;
+                    };
+                    // Delete other account of player, if exists.
+                    deleteAccount(oldAccount)
+                };
             };
             // Add player to account.
             let newAccount : MAccount.Account = switch (newPlayer) {
                 case (#plug(p)) {
                     {
-                        alias         = account.alias;
-                        avatar        = account.avatar;
-                        flavorText    = account.flavorText;
+                        alias         = alias;
+                        avatar        = avatar;
+                        flavorText    = flavorText;
                         id            = account.id;
                         plugAddress   = ?p;
                         primaryWallet = account.primaryWallet;
@@ -229,9 +253,9 @@ module {
                 };
                 case (#stoic(p)) {
                     {
-                        alias         = account.alias;
-                        avatar        = account.avatar;
-                        flavorText    = account.flavorText;
+                        alias         = alias;
+                        avatar        = avatar;
+                        flavorText    = flavorText;
                         id            = account.id;
                         plugAddress   = account.plugAddress;
                         primaryWallet = account.primaryWallet;

@@ -1,0 +1,94 @@
+type UpdateResponse = 
+ variant {
+   err: text;
+   ok: Account;
+ };
+type UpdateRequest = 
+ record {
+   alias: opt text;
+   avatar: opt text;
+   flavorText: opt text;
+   primaryWallet: opt Player;
+ };
+type Score__1 = 
+ record {
+   AccountId;
+   nat;
+ };
+type Score = 
+ record {
+   Player;
+   nat;
+ };
+type Result_1 = 
+ variant {
+   err;
+   ok: Account;
+ };
+type Result = 
+ variant {
+   err;
+   ok: AccountDetails;
+ };
+type Player = 
+ variant {
+   plug: principal;
+   stoic: principal;
+ };
+type DetailedScore = 
+ record {
+   AccountDetails;
+   nat;
+ };
+type AuthenticationResponse = 
+ variant {
+   err: record {message: text;};
+   forbidden;
+   ok: record {
+         account: Account;
+         message: text;
+       };
+   pendingConfirmation: record {message: text;};
+ };
+type AuthenticationRequest = 
+ variant {
+   authenticate: Player;
+   link: record {
+           Player;
+           Player;
+         };
+ };
+type Accounts = 
+ service {
+   addAdmin: (principal) -> ();
+   authenticateAccount: (AuthenticationRequest) -> (AuthenticationResponse);
+   getAccount: (AccountId) -> (Result_1) query;
+   getAccountCount: () -> (nat) query;
+   getAccountDetails: (AccountId) -> (Result) query;
+   getAccountDetailsFromScores: (vec Score__1) -> (vec DetailedScore) query;
+   getAccountsById: (nat, nat) -> (vec Account);
+   getAccountsFromScores: (vec Score) -> (vec Score__1);
+   isAdmin: (principal) -> (bool) query;
+   loadAccounts: (vec Account) -> ();
+   removeAdmin: (principal) -> ();
+   updateAccount: (UpdateRequest) -> (UpdateResponse);
+ };
+type AccountId = nat;
+type AccountDetails = 
+ record {
+   alias: opt text;
+   avatar: opt text;
+   flavorText: opt text;
+   id: AccountId;
+ };
+type Account = 
+ record {
+   alias: opt text;
+   avatar: opt text;
+   flavorText: opt text;
+   id: AccountId;
+   plugAddress: opt principal;
+   primaryWallet: Player;
+   stoicAddress: opt principal;
+ };
+service : () -> Accounts

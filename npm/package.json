@@ -1,11 +1,11 @@
 {
   "name": "@metascore/query",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Public interface for querying Metascore staging canister.",
   "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "declarations": "rsync -avr ../.dfx/local/canisters/metascore/* --exclude='assets/' --exclude='idl/' --exclude='*.wasm' --delete ./generated"
+    "declarations": "rsync -avr ../.dfx/local/canisters/* --exclude='assets/' --exclude='idl/' --exclude='*.wasm' --delete ./generated"
   },
   "repository": {
     "type": "git",

@@ -55,7 +55,6 @@ shared({caller = owner}) actor class Accounts() : async MAccount.PublicInterface
                     case (#ok(account)) { account; };
                 };
 
-
                 let newPrincipal = MPlayer.unpack(newPlayer);
                 switch (users.getLink(caller)) {
                     case (null) {
