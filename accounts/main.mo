@@ -218,15 +218,24 @@ shared({caller = owner}) actor class Accounts() : async MAccount.PublicInterface
         users.getAccountsById(from, to);
     };
 
+    // Get an account by wallet principal
+    // @auth: admin
+    public shared({caller}) func getAccountByPrincipal(p : Principal) : async ?MAccount.Account {
+        assert(_isAdmin(caller));
+        users.getAccountByPrincipal(p);
+    };
+
     // Adds a new principal as an admin.
     // @auth: admin
     public shared({caller}) func addAdmin(p : Principal) : async () {
+        assert(_isAdmin(caller));
         admins.addUserWithRoles(caller, p, [Roles.ALL]);
     };
 
     // Removes the given principal from the list of admins.
     // @auth: admin
     public shared({caller}) func removeAdmin(p : Principal) : async () {
+        assert(_isAdmin(caller));
         admins.removeUser(caller, p);
     };
 
@@ -235,6 +244,20 @@ shared({caller = owner}) actor class Accounts() : async MAccount.PublicInterface
     public query({caller}) func isAdmin(p : Principal) : async Bool {
         assert(_isAdmin(caller));
         admins.hasRole(p, Roles.ALL);
+    };
+
+    // Manually set the next account id in case of emergency
+    // @auth: admin
+    public shared({caller}) func setNextId(id : Nat) : async () {
+        assert(_isAdmin(caller));
+        users.nextAccountId := id;
+    };
+
+    // Check the next account id
+    // @auth: admin
+    public query({caller}) func getNextId() : async Nat {
+        assert(_isAdmin(caller));
+        users.nextAccountId;
     };
 
     // ◤━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◥
