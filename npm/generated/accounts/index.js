@@ -14,7 +14,6 @@ export { idlFactory } from './accounts.did.js';
  */
  export const createActor = (canisterId, options) => {
   const agent = new HttpAgent({ ...options?.agentOptions });
-  agent.fetchRootKey()
   
   // Fetch root key for certificate validation during development
   if(process.env.NODE_ENV !== "production") {

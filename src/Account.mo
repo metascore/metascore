@@ -15,6 +15,7 @@ module {
         plugAddress   : ?Principal;
         primaryWallet : Player.Player;
         stoicAddress  : ?Principal;
+        discord       : ?Text;
     };
 
     public type DetailedScore = (AccountDetails, Nat);
@@ -64,6 +65,7 @@ module {
         alias         : ?Text;
         avatar        : ?Text;
         flavorText    : ?Text;
+        discord       : ?Text;
         primaryWallet : ?Player.Player;
     };
 

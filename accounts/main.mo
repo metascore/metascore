@@ -172,6 +172,7 @@ shared({caller = owner}) actor class Accounts() : async MAccount.PublicInterface
                     alias         = req.alias;
                     avatar        = req.avatar;
                     flavorText    = req.flavorText;
+                    discord       = req.discord;
                     id            = account.id;
                     plugAddress   = account.plugAddress;
                     primaryWallet = switch (req.primaryWallet) {

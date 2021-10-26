@@ -15,6 +15,7 @@ export const idlFactory = ({ IDL }) => {
     'stoicAddress' : IDL.Opt(IDL.Principal),
     'primaryWallet' : Player,
     'flavorText' : IDL.Opt(IDL.Text),
+    'discord' : IDL.Opt(IDL.Text),
     'avatar' : IDL.Opt(IDL.Text),
   });
   const AuthenticationResponse = IDL.Variant({
@@ -38,6 +39,7 @@ export const idlFactory = ({ IDL }) => {
     'alias' : IDL.Opt(IDL.Text),
     'primaryWallet' : IDL.Opt(Player),
     'flavorText' : IDL.Opt(IDL.Text),
+    'discord' : IDL.Opt(IDL.Text),
     'avatar' : IDL.Opt(IDL.Text),
   });
   const UpdateResponse = IDL.Variant({ 'ok' : Account, 'err' : IDL.Text });
@@ -49,6 +51,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'getAccount' : IDL.Func([AccountId], [Result_1], ['query']),
+    'getAccountByPrincipal' : IDL.Func([IDL.Principal], [IDL.Opt(Account)], []),
     'getAccountCount' : IDL.Func([], [IDL.Nat], ['query']),
     'getAccountDetails' : IDL.Func([AccountId], [Result], ['query']),
     'getAccountDetailsFromScores' : IDL.Func(
@@ -62,9 +65,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(Score__1)],
         [],
       ),
+    'getNextId' : IDL.Func([], [IDL.Nat], ['query']),
     'isAdmin' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
     'loadAccounts' : IDL.Func([IDL.Vec(Account)], [], []),
     'removeAdmin' : IDL.Func([IDL.Principal], [], []),
+    'setNextId' : IDL.Func([IDL.Nat], [], []),
     'updateAccount' : IDL.Func([UpdateRequest], [UpdateResponse], []),
   });
   return Accounts;

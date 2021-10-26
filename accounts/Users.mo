@@ -133,6 +133,7 @@ module {
                 alias         = null;
                 avatar        = null;
                 flavorText    = null;
+                discord       = null;
                 id            = getNextAccountId();
                 plugAddress   = switch (player) {
                     case (#plug(p))  { ?p;   };
@@ -214,6 +215,7 @@ module {
             var alias : ?Text = null;
             var avatar : ?Text = null;
             var flavorText : ?Text = null;
+            var discord : ?Text = null;
             switch (getAccountByPrincipal(MPlayer.unpack(newPlayer))) {
                 // Merge account fields via defined > undefined, stoic > plug
                 case (null) {
@@ -234,6 +236,10 @@ module {
                         case null account.flavorText;
                         case x x;
                     };
+                    discord := switch (oldAccount.discord) {
+                        case null account.discord;
+                        case x x;
+                    };
                     // Delete other account of player, if exists.
                     deleteAccount(oldAccount)
                 };
@@ -244,6 +250,7 @@ module {
                     {
                         alias         = alias;
                         avatar        = avatar;
+                        discord       = discord;
                         flavorText    = flavorText;
                         id            = account.id;
                         plugAddress   = ?p;
@@ -255,6 +262,7 @@ module {
                     {
                         alias         = alias;
                         avatar        = avatar;
+                        discord       = discord;
                         flavorText    = flavorText;
                         id            = account.id;
                         plugAddress   = account.plugAddress;

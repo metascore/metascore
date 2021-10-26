@@ -7,6 +7,7 @@ type UpdateRequest =
  record {
    alias: opt text;
    avatar: opt text;
+   discord: opt text;
    flavorText: opt text;
    primaryWallet: opt Player;
  };
@@ -63,14 +64,17 @@ type Accounts =
    addAdmin: (principal) -> ();
    authenticateAccount: (AuthenticationRequest) -> (AuthenticationResponse);
    getAccount: (AccountId) -> (Result_1) query;
+   getAccountByPrincipal: (principal) -> (opt Account);
    getAccountCount: () -> (nat) query;
    getAccountDetails: (AccountId) -> (Result) query;
    getAccountDetailsFromScores: (vec Score__1) -> (vec DetailedScore) query;
    getAccountsById: (nat, nat) -> (vec Account);
    getAccountsFromScores: (vec Score) -> (vec Score__1);
+   getNextId: () -> (nat) query;
    isAdmin: (principal) -> (bool) query;
    loadAccounts: (vec Account) -> ();
    removeAdmin: (principal) -> ();
+   setNextId: (nat) -> ();
    updateAccount: (UpdateRequest) -> (UpdateResponse);
  };
 type AccountId = nat;
@@ -85,6 +89,7 @@ type Account =
  record {
    alias: opt text;
    avatar: opt text;
+   discord: opt text;
    flavorText: opt text;
    id: AccountId;
    plugAddress: opt principal;

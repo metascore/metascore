@@ -6,6 +6,7 @@ export interface Account {
   'stoicAddress' : [] | [Principal],
   'primaryWallet' : Player,
   'flavorText' : [] | [string],
+  'discord' : [] | [string],
   'avatar' : [] | [string],
 }
 export interface AccountDetails {
@@ -21,6 +22,7 @@ export interface Accounts {
       AuthenticationResponse
     >,
   'getAccount' : (arg_0: AccountId) => Promise<Result_1>,
+  'getAccountByPrincipal' : (arg_0: Principal) => Promise<[] | [Account]>,
   'getAccountCount' : () => Promise<bigint>,
   'getAccountDetails' : (arg_0: AccountId) => Promise<Result>,
   'getAccountDetailsFromScores' : (arg_0: Array<Score__1>) => Promise<
@@ -28,9 +30,11 @@ export interface Accounts {
     >,
   'getAccountsById' : (arg_0: bigint, arg_1: bigint) => Promise<Array<Account>>,
   'getAccountsFromScores' : (arg_0: Array<Score>) => Promise<Array<Score__1>>,
+  'getNextId' : () => Promise<bigint>,
   'isAdmin' : (arg_0: Principal) => Promise<boolean>,
   'loadAccounts' : (arg_0: Array<Account>) => Promise<undefined>,
   'removeAdmin' : (arg_0: Principal) => Promise<undefined>,
+  'setNextId' : (arg_0: bigint) => Promise<undefined>,
   'updateAccount' : (arg_0: UpdateRequest) => Promise<UpdateResponse>,
 }
 export type AuthenticationRequest = { 'authenticate' : Player } |
@@ -54,6 +58,7 @@ export interface UpdateRequest {
   'alias' : [] | [string],
   'primaryWallet' : [] | [Player],
   'flavorText' : [] | [string],
+  'discord' : [] | [string],
   'avatar' : [] | [string],
 }
 export type UpdateResponse = { 'ok' : Account } |
