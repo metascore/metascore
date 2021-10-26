@@ -206,6 +206,9 @@ shared({caller = owner}) actor class Accounts() : async MAccount.PublicInterface
         for (account in backup.vals()) {
             users.putAccount(account);
         };
+        if (users.size() > users.nextAccountId) {
+            users.nextAccountId := users.size();
+        };
     };
 
     // Returns a range of accounts.
