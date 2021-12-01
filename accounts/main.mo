@@ -1,4 +1,5 @@
 import Array "mo:base/Array";
+import Buffer "mo:base/Buffer";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import Roles "mo:auth/Roles";
@@ -113,32 +114,26 @@ shared({caller = owner}) actor class Accounts() : async MAccount.PublicInterface
     public query func getAccountDetailsFromScores(
         scores : [MAccount.Score],
     ) : async [MAccount.DetailedScore] {
-        var accounts : [MAccount.DetailedScore] = [];
+        let accounts = Buffer.Buffer<MAccount.DetailedScore>(scores.size());
         for ((accountId, score) in scores.vals()) {
             switch (users.accounts.get(accountId)) {
                 case (null) {
-                    accounts := Array.append<MAccount.DetailedScore>(
-                        accounts,
-                        [(
-                            {
-                                alias      = null;
-                                avatar     = null;
-                                flavorText = null;
-                                id         = accountId;
-                            }, 
-                            score,
-                        )],
-                    );
+                    accounts.add((
+                        {
+                            alias      = null;
+                            avatar     = null;
+                            flavorText = null;
+                            id         = accountId;
+                        }, 
+                        score,
+                    ));
                 };
                 case (? details) {
-                    accounts := Array.append<MAccount.DetailedScore>(
-                        accounts, 
-                        [(details, score)],
-                    );
+                    accounts.add((details, score));
                 };
             };
         };
-        accounts;
+        accounts.toArray();
     };
 
     public shared func getAccountsFromScores(

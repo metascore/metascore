@@ -1,4 +1,5 @@
 import Array "mo:base/Array";
+import Buffer "mo:base/Buffer";
 import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
 import Iter "mo:base/Iter";
@@ -90,16 +91,16 @@ module {
         };
 
         public func getAccountsById(from : Nat, to : Nat) : [MAccount.Account] {
-            var as : [MAccount.Account] = [];
+            let as = Buffer.Buffer<MAccount.Account>(to-from);
             for (i in Iter.range(from, to - 1)) {
                 switch (accounts.get(i)) {
                     case (null)      {};
                     case (? account) {
-                        as := Array.append<MAccount.Account>(as, [account]);
+                        as.add(account);
                     };
                 };
             };
-            as;
+            as.toArray();
         };
 
         // Stores the given account.

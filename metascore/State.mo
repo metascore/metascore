@@ -1,4 +1,5 @@
 import Array "mo:base/Array";
+import Buffer "mo:base/Buffer";
 import EQueue "mo:queue/EvictingQueue";
 import Float "mo:base/Float";
 import Hash "mo:base/Hash";
@@ -29,7 +30,7 @@ module {
     // Converts the state to its corresponing stable form.
     // NOTE: does NOT include users!
     public func toStable(s : State) : [StableGame] {
-        var games : [StableGame] = [];
+        let games = Buffer.Buffer<StableGame>(s.gameLeaderboards.size());
         for ((gameId, accountScores) in s.gameLeaderboards.entries()) {
             let metadata : MPublic.Metadata = switch (s.games.get(gameId)) {
                 case (? m)   { m; };
@@ -44,17 +45,13 @@ module {
                     };
                 };
             };
-            var scores : [(MAccount.AccountId, Nat)] = [];
+            let scores = Buffer.Buffer<(MAccount.AccountId, Nat)>(accountScores.size());
             for ((_, accountScore) in accountScores.entries()) {
-                scores := Array.append<MAccount.Score>(
-                    scores, [accountScore],
-                );
+                scores.add(accountScore);
             };
-            games := Array.append<StableGame>(games, [(
-                gameId, (metadata, scores),
-            )])
+            games.add((gameId, (metadata, scores.toArray())));
         };
-        games;
+        games.toArray();
     };
 
     // Compares two player scores.
